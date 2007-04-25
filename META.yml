@@ -1,0 +1,33 @@
+---
+name: MooseX-Method
+version: 0.15
+author:
+  - 'Anders Nor Berle E<lt>debolaz@gmail.comE<gt>'
+abstract: Method declaration with type checking
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
+  Moose: 0.20
+  Scalar::Util: 1.19
+build_requires:
+  Test::Exception: 0.25
+  Test::More: 0.70
+provides:
+  MooseX::Meta::Method::Signature:
+    file: lib/MooseX/Meta/Method/Signature.pm
+  MooseX::Meta::Parameter:
+    file: lib/MooseX/Meta/Parameter.pm
+  MooseX::Meta::Signature:
+    file: lib/MooseX/Meta/Signature.pm
+  MooseX::Meta::Signature::Named:
+    file: lib/MooseX/Meta/Signature/Named.pm
+  MooseX::Meta::Signature::Positional:
+    file: lib/MooseX/Meta/Signature/Positional.pm
+  MooseX::Method:
+    file: lib/MooseX/Method.pm
+    version: 0.15
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

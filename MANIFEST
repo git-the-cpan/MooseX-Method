@@ -1,0 +1,12 @@
+Build.PL
+lib/MooseX/Meta/Method/Signature.pm
+lib/MooseX/Meta/Parameter.pm
+lib/MooseX/Meta/Signature.pm
+lib/MooseX/Meta/Signature/Named.pm
+lib/MooseX/Meta/Signature/Positional.pm
+lib/MooseX/Method.pm
+MANIFEST			This list of files
+t/001_internal.t
+t/002_named.t
+t/003_positional.t
+META.yml
