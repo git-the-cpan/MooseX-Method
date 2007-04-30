@@ -49,7 +49,7 @@ plan tests => 11;
   } => sub { $_[1]->{num1} };
 }
 
-throws_ok { Foo->test1 } qr/Required/,'required';
+throws_ok { Foo->test1 } qr/must be specified/,'required';
 
 throws_ok { Foo->test1 (num1 => 'foo',num2 => 5) } qr/wrong type/,'typecheck';
 
@@ -63,11 +63,11 @@ is (Foo->test3,100,'default sub');
 
 throws_ok { Foo->test4 } qr/wrong type/,'default typecheck';
 
-throws_ok { Foo->test5 (num1 => 'foo') } qr/couldn't be coerced/,'coerce fail';
+throws_ok { Foo->test5 (num1 => 'foo') } qr/couldn't coerce/,'coerce fail';
 
 is (Foo->test5 (num1 => 20),5,'coerce');
 
-throws_ok { Foo->test6 (num1 => 'foo') } qr/Attempting to coerce/,'coerce typecheck';
+throws_ok { Foo->test6 (num1 => 'foo') } qr/does not support this/,'coerce typecheck';
 
 is (Foo->test7,5,'default coerce');
 

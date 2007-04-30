@@ -21,6 +21,9 @@ sub new {
     my $parameter = $parameters->{$_};
 
     if (ref $parameter eq 'HASH') {
+      $parameter->{name} = $_
+        unless defined $parameter->{name};
+
       if (exists $parameter->{metaclass}) {
         $parameter = $parameter->{metaclass}->new ($parameter);
       } else {

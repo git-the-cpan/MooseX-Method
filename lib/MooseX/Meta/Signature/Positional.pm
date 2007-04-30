@@ -17,8 +17,13 @@ sub new {
   confess "Parameter declaration must be an arrayref"
     unless ref $parameters eq 'ARRAY';
   
+  my $param_count = 1;
+
   foreach my $parameter (@{$parameters}) {
     if (ref $parameter eq 'HASH') {
+      $parameter->{name} = $param_count
+        unless defined $parameter->{name};
+
       if (exists $parameter->{metaclass}) {
         $parameter = $parameter->{metaclass}->new ($parameter);
       } else {
@@ -30,6 +35,8 @@ sub new {
       unless blessed $parameter && $parameter->isa ('MooseX::Meta::Parameter');
 
     push @{$self->{'@!parameter_map'}},$parameter;
+
+    $param_count++;
   }
 
   return $self;

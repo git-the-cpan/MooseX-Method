@@ -9,7 +9,7 @@ use Scalar::Util qw/blessed/;
 use Carp qw/confess/;
 use Exporter qw/import/;
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 our @EXPORT = qw/method/;
 
@@ -26,12 +26,16 @@ sub method {
 
   my $signature;
 
-  if (ref $parameters eq 'HASH') {
-    $signature = MooseX::Meta::Signature::Named->new ($parameters);
-  } elsif (ref $parameters eq 'ARRAY') {
-    $signature = MooseX::Meta::Signature::Positional->new ($parameters);
+  if (blessed $parameters && $parameters->isa ('MooseX::Meta::Signature')) {
+    $signature = $parameters;
   } else {
-    confess "The signature declaration must be a hashref or an arrayref"
+    if (ref $parameters eq 'HASH') {
+      $signature = MooseX::Meta::Signature::Named->new ($parameters);
+    } elsif (ref $parameters eq 'ARRAY') {
+      $signature = MooseX::Meta::Signature::Positional->new ($parameters);
+    } else {
+      confess "The signature declaration must be a hashref, arrayref, or a signature object"
+    }
   }
 
   my $method;
@@ -77,23 +81,29 @@ MooseX::Method - Method declaration with type checking
   use MooseX::Method;
 
   method hello => {
-    who => {
-      isa => 'Str',
-      required => 1,
-    },
-    age => {
-      isa => 'Int',
-      required => 1,
-    },
+    who => { isa => 'Str',required => 1 },
+    age => { isa => 'Int',required => 1 },
   } => sub {
     my ($self,$args) = @_;
 
     print "Hello $args->{who}, I am $args->{age} years old!\n";
   };
 
+  method morning => [
+    { isa => 'Str',required => 1 },
+  ] => sub {
+    my ($self,$name) = @_;
+
+    print "Good morning $name!\n";
+  };
+
   Foo->hello (who => 'world',age => 42); # This works.
 
+  Foo->morning ('Jens'); # This too.
+
   Foo->hello (who => 'world',age => 'fortytwo'); # This doesn't.
+
+  Foo->morning; # This neither.
 
 =head1 DESCRIPTION
 
@@ -130,7 +140,7 @@ declaration and Moose types. It doesn't get much Moosier than this.
 
 The exported function method installs a method into the class from
 which it is called from. The first parameter it takes is the name of
-the method. The second parameter is a parameter declaration, for more
+the method. The second parameter is a signature declaration, for more
 information on that, see below. The third parameter is a coderef that
 should be run when the method is called assuming that all parameters
 satisfies the requirements of the parameter specifications.
@@ -144,8 +154,18 @@ The method specification should look something to this effect:
     bar => { isa => 'Int' }
   }
 
-This will make MooseX::Method create a method which takes two
-parameters, 'foo' and 'bar', of which only 'foo' is mandatory.
+Or for positional arguments...
+
+  [
+    { isa => 'Int',required => 1 },
+    { isa => 'Int' },
+  ]
+
+The first example will make MooseX::Method create a method which takes
+two parameters, 'foo' and 'bar', of which only 'foo' is mandatory. The
+second example will create two positional parameters with the same
+properties.
+
 Currently, the specification for a parameter may set any of the
 following fields:
 
@@ -155,6 +175,10 @@ following fields:
 
 If a value is provided, it must satisfy the constraints of the type
 specified in this field.
+
+=item B<does>
+
+Require that the value provided is able to do a certain role.
 
 =item B<default>
 
@@ -171,12 +195,27 @@ If the type supports coercion, attempt to coerce the value provided if
 it does not satisfy the requirements of isa. See Moose for examples
 of how to coerce.
 
+=item B<metaclass>
+
+This is used as parameter metaclass if specified. If you don't know
+what this means, read the documentation for Moose.
+
+=item B<name>
+
+If this is provided, it overrides the name of the parameter when errors
+are reported. This gets filled in automagically by MooseX::Method if
+you don't specify it, even if you use a custom metaclass.
+
 =head1 CAVEATS
 
 Methods are added to the class at runtime, which obviously means
 they won't be available to play with at compile-time. Moose won't
 mind this but a few other modules probably will. A workaround for
-this is to encapsulate the method declarations in a BEGIN block.
+this that sometimes work is to encapsulate the method declarations
+in a BEGIN block.
+
+One of these modules is Devel::Cover. If anyone have a fix for this,
+it would be very much appreciated.
 
 =head1 ACKNOWLEDGEMENTS
 

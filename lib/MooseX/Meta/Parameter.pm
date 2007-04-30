@@ -4,14 +4,18 @@ use Moose;
 
 use Moose::Util::TypeConstraints;
 
+has name      => (isa => 'Str');
 has metaclass => (isa => 'Str');
 has isa       => (isa => 'Str');
+has does      => (isa => 'Str');
 has required  => (isa => 'Bool');
 has default   => (isa => 'Defined');
-has coerce    => (isa => 'Str');
+has coerce    => (isa => 'Bool');
 
 sub verify_argument {
   my ($self,$value,$provided) = @_;
+
+  my $name = (defined $self->{name} ? $self->{name} : 'unnamed');
 
   if (! $provided && defined $self->{default}) {
     if (ref $self->{default} eq 'CODE') {
@@ -23,7 +27,7 @@ sub verify_argument {
     $provided = 1;
   }
 
-  confess "Required argumment not specified"
+  confess "Parameter $name must be specified"
     if (! $provided && $self->{required});
 
   if (defined $self->{isa}) {
@@ -31,18 +35,24 @@ sub verify_argument {
 
     unless ($type->check ($value)) {
       if ($self->{coerce}) {
-        confess "Attempting to coerce to a type that cannot coerce"
+        confess "Parameter $name wants to coerce but type $self->{isa} does not support this"
           unless $type->has_coercion;
 
         my $return = $type->coerce ($value);
 
-        confess "'$return' is of wrong type (Expected '$self->{isa}') and couldn't be coerced"
+        confess "Parameter $name is wrong type (got '$return' which isn't a '$self->{isa}') and couldn't coerce"
           unless $type->check ($return);
 
         $value = $return;
       } else {
-        confess "'$value' is of wrong type (Expected '$self->{isa}')";
+        confess "Parameter $name is wrong type (got '$value' which isn't a '$self->{isa}')";
       }
+    }
+  }
+
+  if (defined $self->{does}) {
+    unless (blessed $value && $value->can ('does') && $value->does ($self->{does})) {
+      confess "Parameter $name does not do '$self->{does}'";
     }
   }
 
