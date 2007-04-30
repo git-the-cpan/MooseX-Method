@@ -1,3 +1,9 @@
+0.18 Tue. May 1, 2007
+    * MooseX::Method
+      - Document a problem with roles.
+      - Make Devel::Cover and MooseX::Method play
+        nice together. :-)
+
 0.17 Mon. April 30, 2007
     - 100% test coverage again.
     - Rethink the way names are specified to errors.

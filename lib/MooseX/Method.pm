@@ -8,8 +8,9 @@ use MooseX::Meta::Signature::Positional;
 use Scalar::Util qw/blessed/;
 use Carp qw/confess/;
 use Exporter qw/import/;
+use Sub::Name qw/subname/;
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 our @EXPORT = qw/method/;
 
@@ -39,6 +40,10 @@ sub method {
   }
 
   my $method;
+
+  subname "$class\::$name", $coderef;
+
+  $class->meta->add_package_symbol ("&${name}__no_validate" => $coderef);
 
   if (my $wrapper_coderef = $class->can ('_dispatch_wrapper')) {
     $method = MooseX::Meta::Method::Signature->wrap_with_signature ($signature,sub {
@@ -208,8 +213,10 @@ mind this but a few other modules probably will. A workaround for
 this that sometimes work is to encapsulate the method declarations
 in a BEGIN block.
 
-One of these modules is Devel::Cover. If anyone have a fix for this,
-it would be very much appreciated.
+There's also a problem related to how roles are loaded in Moose. Since
+both MooseX::Method methods and Moose roles are loaded runtime, any
+methods a role requires must be declared before the 'with' statement.
+This affects things like 'before' and 'with'.
 
 =head1 ACKNOWLEDGEMENTS
 
