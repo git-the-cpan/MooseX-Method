@@ -1,0 +1,23 @@
+0.17 Mon. April 30, 2007
+    - 100% test coverage again.
+    - Rethink the way names are specified to errors.
+    - Fix various bugs.
+
+0.16 Mon. April 30, 2007
+    - Changed to Module::Install.
+    - Documentation updates.
+
+    * MooseX::Method
+      - Let user supply a signature object.
+      - Support a _dispatch_wrapper method that
+        gets called if present in place of the
+        actual method called.
+
+    * MooseX::Meta::Parameter
+      - Add support for roles.
+      - Report parameter name/position in error
+        messages.
+
+    * MooseX::Meta::Signature::(Named|Positional)
+      - Supply name to parameter object.
+

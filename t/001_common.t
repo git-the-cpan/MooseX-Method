@@ -4,7 +4,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 19;
+plan tests => 22;
 
 {
   package My::Metaclass;
@@ -15,7 +15,7 @@ plan tests => 19;
 }
 
 {
-  package XXX;
+  package XXX1;
 
   use MooseX::Method;
   use Test::Exception;
@@ -24,7 +24,7 @@ plan tests => 19;
 }
 
 {
-  package XXY;
+  package XXX2;
 
   use MooseX::Method;
   use Test::Exception;
@@ -35,7 +35,7 @@ plan tests => 19;
 }
 
 {
-  package XXZ;
+  package XXX3;
 
   use MooseX::Method;
   use Test::Exception;
@@ -54,10 +54,26 @@ plan tests => 19;
 
   throws_ok { method xxx => 0 => sub {} } qr/signature declaration must/,'signature declaration';
 
+  throws_ok { method xxx => bless ({},'Bar') => sub {} } qr/signature declaration must/;
+
+  lives_ok { method bar => MooseX::Meta::Signature->new ({}) => sub {} };
+
   throws_ok { method xxx => { foo => 0 } => sub {} } qr/Parameter must/,'parameter declaration';
 
   throws_ok { method xxx => {} => 0 } qr/Expecting a coderef/,'coderef';
 }
+
+{
+  package Foo::Wrapper;
+
+  use Moose;
+  use MooseX::Method;
+
+  sub _dispatch_wrapper { 42 }
+
+  method test1 => {} => sub {};
+}
+
 
 throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (0,sub {}) } qr/Signature must be/;
 
@@ -90,4 +106,6 @@ my $positional_signature = MooseX::Meta::Signature::Positional->new ([{ metaclas
 isa_ok $positional_signature,'MooseX::Meta::Signature';
 
 ok $positional_signature->get_parameter_map;
+
+is (Foo::Wrapper->test1,42);
 

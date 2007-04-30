@@ -17,13 +17,8 @@ sub new {
   confess "Parameter declaration must be an arrayref"
     unless ref $parameters eq 'ARRAY';
   
-  my $param_count = 1;
-
   foreach my $parameter (@{$parameters}) {
     if (ref $parameter eq 'HASH') {
-      $parameter->{name} = $param_count
-        unless defined $parameter->{name};
-
       if (exists $parameter->{metaclass}) {
         $parameter = $parameter->{metaclass}->new ($parameter);
       } else {
@@ -35,8 +30,6 @@ sub new {
       unless blessed $parameter && $parameter->isa ('MooseX::Meta::Parameter');
 
     push @{$self->{'@!parameter_map'}},$parameter;
-
-    $param_count++;
   }
 
   return $self;
@@ -47,7 +40,7 @@ sub verify_arguments {
 
   my @args;
 
-  push @args,$self->{'@!parameter_map'}->[$_]->verify_argument ($_[$_],($_ <= $#_ ? 1 : 0))
+  push @args,$self->{'@!parameter_map'}->[$_]->verify_argument ($_ + 1,$_[$_],($_ <= $#_ ? 1 : 0))
     for (0 .. $#{$self->{'@!parameter_map'}});
 
   return @args;

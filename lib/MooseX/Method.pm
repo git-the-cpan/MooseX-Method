@@ -9,7 +9,7 @@ use Scalar::Util qw/blessed/;
 use Carp qw/confess/;
 use Exporter qw/import/;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 our @EXPORT = qw/method/;
 
@@ -199,12 +199,6 @@ of how to coerce.
 
 This is used as parameter metaclass if specified. If you don't know
 what this means, read the documentation for Moose.
-
-=item B<name>
-
-If this is provided, it overrides the name of the parameter when errors
-are reported. This gets filled in automagically by MooseX::Method if
-you don't specify it, even if you use a custom metaclass.
 
 =head1 CAVEATS
 

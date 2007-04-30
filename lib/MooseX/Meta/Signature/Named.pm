@@ -21,9 +21,6 @@ sub new {
     my $parameter = $parameters->{$_};
 
     if (ref $parameter eq 'HASH') {
-      $parameter->{name} = $_
-        unless defined $parameter->{name};
-
       if (exists $parameter->{metaclass}) {
         $parameter = $parameter->{metaclass}->new ($parameter);
       } else {
@@ -51,7 +48,7 @@ sub verify_arguments {
     $args = { @_ };
   }
 
-  $args->{$_} = $self->{'%!parameter_map'}->{$_}->verify_argument ($args->{$_},exists $args->{$_})
+  $args->{$_} = $self->{'%!parameter_map'}->{$_}->verify_argument ($_,$args->{$_},exists $args->{$_})
     for (keys %{$self->{'%!parameter_map'}});
 
   return $args;

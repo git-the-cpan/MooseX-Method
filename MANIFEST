@@ -1,3 +1,4 @@
+Changes
 inc/Module/AutoInstall.pm
 inc/Module/Install.pm
 inc/Module/Install/AutoInstall.pm
@@ -18,6 +19,7 @@ lib/MooseX/Method.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
-t/001_internal.t
+t/001_common.t
 t/002_named.t
 t/003_positional.t
+t/004_common_2.t
