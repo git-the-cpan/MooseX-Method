@@ -10,14 +10,38 @@ use Carp qw/confess/;
 use Exporter qw/import/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.18';
+our $VERSION = '0.20';
 
 our @EXPORT = qw/method/;
 
 sub method {
-  my ($name,$parameters,$coderef) = @_;
-
+  my ($name,$attributes,$local_attributes,$parameters,$coderef);
+ 
   my $class = caller;
+
+  # Have a method that allows default attribute settings for methods.
+  if ($class->can ('_default_method_attributes')) {
+    $attributes = $class->_default_method_attributes ($name);
+
+    confess "_default_method_attributes exists but does not return a hashref"
+      unless ref $attributes eq 'HASH';
+  } else {
+    $attributes = {};
+  }
+
+  # We allow 3 or 4 parameter syntax.
+  if (scalar @_ == 3) {
+    ($name,$parameters,$coderef) = @_;
+  } elsif (scalar @_ == 4) {
+    ($name,$local_attributes,$parameters,$coderef) = @_;
+
+    confess "Method attribute specification must be a hashref"
+      unless ref $local_attributes eq 'HASH';
+
+    $attributes = { %$attributes,%$local_attributes };
+  } else {
+    confess "Invalid number of parameters in method declaration";
+  }
 
   confess "$class does not have a meta method (Did you remember to load Moose?)"
     unless $class->can ('meta') && blessed $class->meta && $class->meta->isa ('Moose::Meta::Class');
@@ -39,30 +63,22 @@ sub method {
     }
   }
 
-  my $method;
+  my $method_metaclass = $attributes->{metaclass} || 'MooseX::Meta::Method::Signature';
 
   subname "$class\::$name", $coderef;
 
-  $class->meta->add_package_symbol ("&${name}__no_validate" => $coderef);
+  # This is a workaround for Devel::Cover. It has the nice sideffect
+  # of making dispatch wrapping redundant though.
+  $class->meta->add_package_symbol ("&${name}__original_ref" => $coderef);
+    
+  my $method = $method_metaclass->wrap_with_signature ($signature,sub {
+      my $self = shift;
 
-  if (my $wrapper_coderef = $class->can ('_dispatch_wrapper')) {
-    $method = MooseX::Meta::Method::Signature->wrap_with_signature ($signature,sub {
-        my $self = shift;
+      @_ = ($self,$signature->verify_arguments (@_));
 
-        @_ = ($self,$name,$coderef,$signature->verify_arguments (@_));
-
-        goto $wrapper_coderef;
-      });
-  } else {
-    $method = MooseX::Meta::Method::Signature->wrap_with_signature ($signature,sub {
-        my $self = shift;
-
-        @_ = ($self,$signature->verify_arguments (@_));
-
-        goto $coderef;
-      });
-  }
-
+      goto $coderef;
+    });
+  
   $class->meta->add_method ($name => $method);
 
   return $method;
@@ -152,7 +168,7 @@ satisfies the requirements of the parameter specifications.
 
 =head2 Parameter specifications
 
-The method specification should look something to this effect:
+The parameter specification should look something to this effect:
 
   {
     foo => { isa => 'Int',required => 1 },
@@ -205,6 +221,39 @@ of how to coerce.
 This is used as parameter metaclass if specified. If you don't know
 what this means, read the documentation for Moose.
 
+=head1 ATTRIBUTES
+
+Warning, support for attributes is at a very early stage and the
+syntax for using them is still something that may change. However,
+I guarantee that this in any case will not affect the standard syntax.
+
+To set a method attribute, use the following syntax:
+
+  method foo => {
+    attribute => $value,
+  } => {
+    # Regular parameter stuff here
+  } => sub {};
+
+You can set the default method attributes for a class by having a
+hashref with them returned from the method _default_method_attributes
+like this:
+
+  sub _default_method_attributes { { attribute => $value } }
+
+  method foo => {
+    override => $value,
+  } => {
+  } => sub {};
+
+At present time, not many attributes will actually do much.
+
+=over4
+
+=item B<metaclass>
+
+Sets the metaclass to use for when creating the method.
+
 =head1 CAVEATS
 
 Methods are added to the class at runtime, which obviously means
@@ -215,8 +264,8 @@ in a BEGIN block.
 
 There's also a problem related to how roles are loaded in Moose. Since
 both MooseX::Method methods and Moose roles are loaded runtime, any
-methods a role requires must be declared before the 'with' statement.
-This affects things like 'before' and 'with'.
+methods a role requires in some way must be declared before the 'with'
+statement. This affects things like 'before' and 'after'.
 
 =head1 ACKNOWLEDGEMENTS
 

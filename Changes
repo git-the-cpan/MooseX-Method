@@ -1,3 +1,11 @@
+0.20 Tue. May 1, 2007
+    - Documentation stuff.
+
+    * MooseX::Method
+      - Add support for attributes.
+      - Remove _dispatch_wrapper support, no longer
+        neccesary.
+
 0.18 Tue. May 1, 2007
     * MooseX::Method
       - Document a problem with roles.
