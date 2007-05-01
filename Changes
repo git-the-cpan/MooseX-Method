@@ -1,3 +1,12 @@
+0.22 Tue. May 1, 2007
+    !! NEW SYNTAX !!
+
+    * MooseX::Method
+      - New syntax.
+
+    * MooseX::Meta::Signature
+      - This is now a role.
+
 0.20 Tue. May 1, 2007
     - Documentation stuff.
 

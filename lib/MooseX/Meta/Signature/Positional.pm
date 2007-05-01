@@ -5,7 +5,7 @@ use Moose;
 use MooseX::Meta::Parameter;
 use Scalar::Util qw/blessed/;
 
-extends qw/MooseX::Meta::Signature/;
+with qw/MooseX::Meta::Signature/;
 
 sub new {
   my ($class,$parameters) = @_;

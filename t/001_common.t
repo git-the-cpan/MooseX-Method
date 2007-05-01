@@ -4,7 +4,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 26;
+plan tests => 28;
 
 {
   package My::Metaclass;
@@ -20,7 +20,7 @@ plan tests => 26;
   use MooseX::Method;
   use Test::Exception;
 
-  throws_ok { method xxx => [] => sub {} } qr/not have a meta method/;
+  throws_ok { method xxx => sub {} } qr/not have a metaobject/;
 }
 
 {
@@ -31,7 +31,7 @@ plan tests => 26;
 
   sub meta {};
 
-  throws_ok { method xxx => [] => sub {} } qr/not have a meta method/;
+  throws_ok { method xxx => sub {} } qr/not have a metaobject/;
 }
 
 {
@@ -42,7 +42,7 @@ plan tests => 26;
 
   sub meta { bless {},'Foo' }
 
-  throws_ok { method xxx => [] => sub {} } qr/not have a meta method/;
+  throws_ok { method xxx => sub {} } qr/not have a metaobject/;
 }
 
 {
@@ -52,17 +52,19 @@ plan tests => 26;
   use MooseX::Method;
   use Test::Exception;
 
-  throws_ok { method xxx => 0 => sub {} } qr/signature declaration must/,'signature declaration';
+  throws_ok { method undef() => named () => sub {} } qr/must supply a method name/;
 
-  throws_ok { method xxx => bless ({},'Bar') => sub {} } qr/signature declaration must/;
+  throws_ok { method bless({},'Foo') => named () => sub {} } qr/must supply a method name/;
 
-  lives_ok { method bar => MooseX::Meta::Signature->new ({}) => sub {} };
+  throws_ok { method xxx => bless ({},'XXX3') => named () => sub {} } qr/no idea/;
 
-  throws_ok { method xxx => { foo => 0 } => sub {} } qr/Parameter must/,'parameter declaration';
+  throws_ok { method xxx => bless ({},'Foo') => sub {} } qr/no idea/;
 
-  throws_ok { method xxx => {} => 0 } qr/Expecting a coderef/,'coderef';
+  throws_ok { method xxx => named (foo => 0) => sub {} } qr/Parameter must/,'parameter declaration';
 
-  throws_ok { method xxx => {} => {} => {} => sub {} } qr/Invalid number/;
+  throws_ok { method xxx => sub {} } qr/provide a signature/;
+
+  throws_ok { method xxx => named () } qr/provide a coderef/;
 }
 
 {
@@ -74,7 +76,15 @@ plan tests => 26;
 
   sub _default_method_attributes { 0 }
 
-  throws_ok { method xxx => {} => sub {} } qr/not return a hashref/;
+  throws_ok { method xxx => named () => sub {} } qr/not return a hashref/;
+}
+
+{
+  package Foo::Attr::Method;
+
+  use Moose;
+
+  extends qw/MooseX::Meta::Method::Signature/;
 }
 
 {
@@ -82,11 +92,11 @@ plan tests => 26;
 
   use Moose;
   use MooseX::Method;
-  use Test::Exception;
+  use Test::More;
 
-  throws_ok { method xxx => 0 => {} => sub {} } qr/must be a hashref/;
+  my $custom_method = method test1 => attr (metaclass => 'Foo::Attr::Method') => named () => sub { 42 };
 
-  method test1 => { metaclass => 'MooseX::Meta::Method::Signature' } => {} => sub { 42 };
+  isa_ok $custom_method,'Foo::Attr::Method';
 }
 
 is (Foo::Attr->test1,42);
@@ -101,14 +111,16 @@ is (Foo::Attr->test1,42);
   sub _default_method_attributes { {
     } }
 
-  method test1 => {} => sub { 42 };
+  method test1 => named () => sub { 42 };
 }
 
 is (Foo::Attr::Default->test1,42);
 
-throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (0,sub {}) } qr/Signature must be/;
+throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (0,sub {}) } qr/Signature must do/;
 
-throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (bless ({},'Foo'),sub {}) } qr/Signature must be/;
+throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (bless ({},'XXX3'),sub {}) } qr/Signature must do/;
+
+throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (bless ({},'Foo'),sub {}) } qr/Signature must do/;
 
 throws_ok { MooseX::Meta::Signature::Named->new (0) } qr/must be a hashref/;
 
@@ -124,7 +136,7 @@ throws_ok { MooseX::Meta::Signature::Positional->new ([bless {},'Foo']) } qr/mus
 
 my $named_signature = MooseX::Meta::Signature::Named->new ({foo => { metaclass => 'My::Metaclass' }});
 
-isa_ok $named_signature,'MooseX::Meta::Signature','signature isa';
+ok $named_signature->does ('MooseX::Meta::Signature');
 
 ok $named_signature->get_parameter_map,'signature get_parameter_map';
 
@@ -134,7 +146,7 @@ ok $test_method->get_signature;
 
 my $positional_signature = MooseX::Meta::Signature::Positional->new ([{ metaclass => 'My::Metaclass' }]);
 
-isa_ok $positional_signature,'MooseX::Meta::Signature';
+ok $positional_signature->does ('MooseX::Meta::Signature');
 
 ok $positional_signature->get_parameter_map;
 

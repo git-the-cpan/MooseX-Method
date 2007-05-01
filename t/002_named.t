@@ -18,35 +18,35 @@ plan tests => 11;
 
   coerce SmallInt => from 'Int' => via { 5 };
 
-  method test1 => {
+  method test1 => named (
     num1 => { isa => 'Int',required => 1 },
     num2 => { isa => 'Int',required => 1 },
     num3 => {},
-  } => sub { $_[1]->{num1} + $_[1]->{num2} };
+  ) => sub { $_[1]->{num1} + $_[1]->{num2} };
 
-  method test2 => {
+  method test2 => named (
     num1 => { isa => 'Int',default => 50 },
-  } => sub { $_[1]->{num1} };
+  ) => sub { $_[1]->{num1} };
 
-  method test3 => {
+  method test3 => named (
     num1 => { isa => 'Int',default => sub { 100 } }
-  } => sub { $_[1]->{num1} };
+  ) => sub { $_[1]->{num1} };
 
-  method test4 => {
+  method test4 => named (
     num1 => { isa => 'Int',default => 'foo' },
-  } => sub {};
+  ) => sub {};
 
-  method test5 => {
+  method test5 => named (
     num1 => { isa => 'SmallInt',coerce => 1 },
-  } => sub { $_[1]->{num1} };
+  ) => sub { $_[1]->{num1} };
 
-  method test6 => {
+  method test6 => named (
     num1 => { isa => 'Int',coerce => 1 },
-  } => sub {};
+  ) => sub {};
 
-  method test7 => {
+  method test7 => named (
     num1 => { isa => 'SmallInt',coerce => 1,default => '50' },
-  } => sub { $_[1]->{num1} };
+  ) => sub { $_[1]->{num1} };
 }
 
 throws_ok { Foo->test1 } qr/must be specified/,'required';

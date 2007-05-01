@@ -10,14 +10,44 @@ use Carp qw/confess/;
 use Exporter qw/import/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.20';
+our $VERSION = '0.22';
 
-our @EXPORT = qw/method/;
+our @EXPORT = qw/method attr named positional/;
 
 sub method {
-  my ($name,$attributes,$local_attributes,$parameters,$coderef);
- 
+  my $name = shift;
+
+  confess "You must supply a method name"
+    unless $name && ! ref $name;
+
   my $class = caller;
+
+  confess "$class does not have a metaobject (Did you remember to use Moose?)"
+    unless $class->can ('meta') && blessed $class->meta && $class->meta->isa ('Moose::Meta::Class');
+
+  my ($signature,$coderef);
+
+  my $local_attributes = {};
+
+  for (@_) {
+    if (blessed $_ && $_->can ('does') && $_->does ('MooseX::Meta::Signature')) {
+      $signature = $_;
+    } elsif (ref $_ eq 'CODE') {
+      $coderef = $_;
+    } elsif (ref $_ eq 'HASH') {
+      $local_attributes = $_;
+    } else {
+      confess "I have no idea what to do with '$_'";
+    }
+  }
+
+  confess "You didn't provide a coderef"
+    unless defined $coderef;
+
+  confess "You didn't provide a signature"
+    unless defined $signature;
+
+  my $attributes;
 
   # Have a method that allows default attribute settings for methods.
   if ($class->can ('_default_method_attributes')) {
@@ -29,39 +59,7 @@ sub method {
     $attributes = {};
   }
 
-  # We allow 3 or 4 parameter syntax.
-  if (scalar @_ == 3) {
-    ($name,$parameters,$coderef) = @_;
-  } elsif (scalar @_ == 4) {
-    ($name,$local_attributes,$parameters,$coderef) = @_;
-
-    confess "Method attribute specification must be a hashref"
-      unless ref $local_attributes eq 'HASH';
-
-    $attributes = { %$attributes,%$local_attributes };
-  } else {
-    confess "Invalid number of parameters in method declaration";
-  }
-
-  confess "$class does not have a meta method (Did you remember to load Moose?)"
-    unless $class->can ('meta') && blessed $class->meta && $class->meta->isa ('Moose::Meta::Class');
-
-  confess "Expecting a coderef"
-    unless ref $coderef eq 'CODE';
-
-  my $signature;
-
-  if (blessed $parameters && $parameters->isa ('MooseX::Meta::Signature')) {
-    $signature = $parameters;
-  } else {
-    if (ref $parameters eq 'HASH') {
-      $signature = MooseX::Meta::Signature::Named->new ($parameters);
-    } elsif (ref $parameters eq 'ARRAY') {
-      $signature = MooseX::Meta::Signature::Positional->new ($parameters);
-    } else {
-      confess "The signature declaration must be a hashref, arrayref, or a signature object"
-    }
-  }
+  $attributes = { %$attributes,%$local_attributes };
 
   my $method_metaclass = $attributes->{metaclass} || 'MooseX::Meta::Method::Signature';
 
@@ -84,6 +82,24 @@ sub method {
   return $method;
 }
 
+sub named {
+  my (%parameters) = @_;
+
+  return MooseX::Meta::Signature::Named->new (\%parameters);
+}
+
+sub positional {
+  my (@parameters) = @_;
+
+  return MooseX::Meta::Signature::Positional->new (\@parameters);
+}
+
+sub attr {
+  my (%attributes) = @_;
+
+  return \%attributes;
+}
+
 1;
 
 __END__
@@ -101,18 +117,18 @@ MooseX::Method - Method declaration with type checking
   use Moose;
   use MooseX::Method;
 
-  method hello => {
+  method hello => named (
     who => { isa => 'Str',required => 1 },
     age => { isa => 'Int',required => 1 },
-  } => sub {
+  ) => sub {
     my ($self,$args) = @_;
 
     print "Hello $args->{who}, I am $args->{age} years old!\n";
   };
 
-  method morning => [
+  method morning => positional (
     { isa => 'Str',required => 1 },
-  ] => sub {
+  ) => sub {
     my ($self,$name) = @_;
 
     print "Good morning $name!\n";
@@ -157,38 +173,36 @@ declaration and Moose types. It doesn't get much Moosier than this.
 
 =head1 DECLARING METHODS
 
-  method $name => {} => sub {}
+  method $name => named () => sub {}
 
 The exported function method installs a method into the class from
 which it is called from. The first parameter it takes is the name of
-the method. The second parameter is a signature declaration, for more
-information on that, see below. The third parameter is a coderef that
-should be run when the method is called assuming that all parameters
-satisfies the requirements of the parameter specifications.
+the method. The rest of the parameters needs not be in any particular
+order, though it's probably best for the sake of readability to keep
+the subroutine at the end.
 
-=head2 Parameter specifications
+=head2 Parameters
 
 The parameter specification should look something to this effect:
 
-  {
+  named (
     foo => { isa => 'Int',required => 1 },
-    bar => { isa => 'Int' }
-  }
+    bar => { isa => 'Int' },
+  )
 
 Or for positional arguments...
 
-  [
+  positional (
     { isa => 'Int',required => 1 },
     { isa => 'Int' },
-  ]
+  )
 
 The first example will make MooseX::Method create a method which takes
 two parameters, 'foo' and 'bar', of which only 'foo' is mandatory. The
 second example will create two positional parameters with the same
 properties.
 
-Currently, the specification for a parameter may set any of the
-following fields:
+Currently, a parameter may set any of the following fields:
 
 =over4
 
@@ -221,30 +235,27 @@ of how to coerce.
 This is used as parameter metaclass if specified. If you don't know
 what this means, read the documentation for Moose.
 
-=head1 ATTRIBUTES
-
-Warning, support for attributes is at a very early stage and the
-syntax for using them is still something that may change. However,
-I guarantee that this in any case will not affect the standard syntax.
+=head2 Attributes
 
 To set a method attribute, use the following syntax:
 
-  method foo => {
+  method foo => attr (
     attribute => $value,
-  } => {
+  ) => named (
     # Regular parameter stuff here
-  } => sub {};
+  ) => sub {};
 
 You can set the default method attributes for a class by having a
 hashref with them returned from the method _default_method_attributes
 like this:
 
-  sub _default_method_attributes { { attribute => $value } }
+  sub _default_method_attributes { attr (attribute => $value) }
 
-  method foo => {
-    override => $value,
-  } => {
-  } => sub {};
+  method foo => attr (
+    overridden_attribute => $value,
+  ) => named (
+    # Regular parameter stuff here
+  ) => sub {};
 
 At present time, not many attributes will actually do much.
 
@@ -253,6 +264,13 @@ At present time, not many attributes will actually do much.
 =item B<metaclass>
 
 Sets the metaclass to use for when creating the method.
+
+=head1 FUTURE
+
+I'm considering using a param() function to declare individual
+parameters, but I feel this might have a bit too high risk of
+clashing with existing functions of other modules. Your thoughts on
+the subject is welcome.
 
 =head1 CAVEATS
 

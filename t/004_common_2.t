@@ -13,9 +13,9 @@ plan tests => 5;
   use MooseX::Method;
   use Test::Exception;
 
-  method test1 => [
+  method test1 => positional (
     { does => 'Foo::Role' },
-  ] => sub { $_[1] };
+  ) => sub { $_[1] };
 }
 
 {
