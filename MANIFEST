@@ -15,6 +15,7 @@ lib/MooseX/Meta/Parameter.pm
 lib/MooseX/Meta/Signature.pm
 lib/MooseX/Meta/Signature/Named.pm
 lib/MooseX/Meta/Signature/Positional.pm
+lib/MooseX/Meta/Signature/Semi.pm
 lib/MooseX/Method.pm
 Makefile.PL
 MANIFEST			This list of files
@@ -22,4 +23,5 @@ META.yml
 t/001_common.t
 t/002_named.t
 t/003_positional.t
-t/004_common_2.t
+t/004_semi.t
+t/010_common_2.t

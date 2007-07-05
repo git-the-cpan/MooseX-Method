@@ -5,7 +5,7 @@ build_requires:
   Test::Exception: 0.25
   Test::More: 0.70
 distribution_type: module
-generated_by: Module::Install version 0.65
+generated_by: Module::Install version 0.67
 license: perl
 meta-spec: 
   url: http://module-build.sourceforge.net/META-spec-v1.3.html
@@ -17,7 +17,9 @@ no_index:
     - t
 requires: 
   Carp: 0
-  Moose: 0.20
+  Class::MOP: 0.40
+  Module::Find: 0.05
+  Moose: 0.24
   Scalar::Util: 1.19
   Sub::Name: 0.02
-version: 0.22
+version: 0.29

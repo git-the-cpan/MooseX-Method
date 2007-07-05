@@ -7,10 +7,8 @@ extends qw/Moose::Meta::Method/;
 sub wrap_with_signature {
   my ($class,$signature,$coderef) = @_;
 
-  confess "Signature must do MooseX::Meta::Signature"
-    unless blessed $signature &&
-           $signature->can ('does') &&
-           $signature->does ('MooseX::Meta::Signature');
+  confess "Signature is not a MooseX::Meta::Signature"
+    unless blessed $signature && $signature->isa ('MooseX::Meta::Signature');
 
   my $self = $class->wrap ($coderef);
 

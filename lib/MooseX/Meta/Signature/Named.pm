@@ -5,20 +5,17 @@ use Moose;
 use MooseX::Meta::Parameter;
 use Scalar::Util qw/blessed/;
 
-with qw/MooseX::Meta::Signature/;
+extends qw/MooseX::Meta::Signature/;
 
 sub new {
-  my ($class,$parameters) = @_;
+  my ($class,%parameters) = @_;
 
   my $self = $class->meta->new_object;
 
   $self->{'%!parameter_map'} = {};
 
-  confess "Parameter declaration must be a hashref"
-    unless ref $parameters eq 'HASH';
-  
-  for (keys %{$parameters}) {
-    my $parameter = $parameters->{$_};
+  for (keys %parameters) {
+    my $parameter = $parameters{$_};
 
     if (ref $parameter eq 'HASH') {
       if (exists $parameter->{metaclass}) {

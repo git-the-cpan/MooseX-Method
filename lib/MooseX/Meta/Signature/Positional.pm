@@ -5,19 +5,16 @@ use Moose;
 use MooseX::Meta::Parameter;
 use Scalar::Util qw/blessed/;
 
-with qw/MooseX::Meta::Signature/;
+extends qw/MooseX::Meta::Signature/;
 
 sub new {
-  my ($class,$parameters) = @_;
+  my ($class,@parameters) = @_;
 
   my $self = $class->meta->new_object;
 
   $self->{'@!parameter_map'} = [];
 
-  confess "Parameter declaration must be an arrayref"
-    unless ref $parameters eq 'ARRAY';
-  
-  foreach my $parameter (@{$parameters}) {
+  foreach my $parameter (@parameters) {
     if (ref $parameter eq 'HASH') {
       if (exists $parameter->{metaclass}) {
         $parameter = $parameter->{metaclass}->new ($parameter);

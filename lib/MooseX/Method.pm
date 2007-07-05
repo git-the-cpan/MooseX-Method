@@ -2,17 +2,58 @@ package MooseX::Method;
 
 use Moose;
 
+use Carp qw/confess/;
+use Class::MOP;
+use Exporter;
+use Module::Find;
+use Moose::Meta::Class;
 use MooseX::Meta::Method::Signature;
 use MooseX::Meta::Signature::Named;
 use MooseX::Meta::Signature::Positional;
 use Scalar::Util qw/blessed/;
-use Carp qw/confess/;
-use Exporter qw/import/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.22';
+our $VERSION = '0.29';
 
-our @EXPORT = qw/method attr named positional/;
+our @EXPORT = qw/method attr named positional semi/;
+
+sub import {
+  my $class = caller;
+
+  # MooseX::Method could initialize a metaclass automagically, but I prefer
+  # to leave that to the user at this time.
+
+  confess "$class does not have a metaobject (Did you remember to use Moose first?)"
+    unless Class::MOP::does_metaclass_exist ($class);
+
+  my @signature_metaclasses = usesub MooseX::Meta::Signature;
+
+  foreach my $signature_metaclass (@signature_metaclasses) {
+    my $shorthand = my $filename = $signature_metaclass;
+
+    $shorthand =~ s/.*:://;
+
+    Moose::Meta::Class->create ("MooseX::Signature::$shorthand" =>
+      methods => {
+        import => sub {
+          no strict qw/refs/;
+
+          my $pkg = caller;
+
+          my $constructor_name = $_[1] || lc ($shorthand);
+
+          *{$pkg."::$constructor_name"} = sub {
+            return $signature_metaclass->new (@_);
+          };
+        },
+      },
+    );
+
+    $INC{"MooseX/Signature/$shorthand.pm"} = 1;
+  }
+
+  goto &Exporter::import;
+}
 
 sub method {
   my $name = shift;
@@ -22,15 +63,12 @@ sub method {
 
   my $class = caller;
 
-  confess "$class does not have a metaobject (Did you remember to use Moose?)"
-    unless $class->can ('meta') && blessed $class->meta && $class->meta->isa ('Moose::Meta::Class');
-
   my ($signature,$coderef);
 
   my $local_attributes = {};
 
   for (@_) {
-    if (blessed $_ && $_->can ('does') && $_->does ('MooseX::Meta::Signature')) {
+    if (blessed $_ && $_->isa ('MooseX::Meta::Signature')) {
       $signature = $_;
     } elsif (ref $_ eq 'CODE') {
       $coderef = $_;
@@ -82,23 +120,17 @@ sub method {
   return $method;
 }
 
-sub named {
-  my (%parameters) = @_;
-
-  return MooseX::Meta::Signature::Named->new (\%parameters);
-}
-
-sub positional {
-  my (@parameters) = @_;
-
-  return MooseX::Meta::Signature::Positional->new (\@parameters);
-}
-
 sub attr {
   my (%attributes) = @_;
 
   return \%attributes;
 }
+
+sub named { MooseX::Meta::Signature::Named->new (@_) }
+
+sub positional { MooseX::Meta::Signature::Positional->new (@_) }
+
+sub semi { MooseX::Meta::Signature::Semi->new (@_) }
 
 1;
 
@@ -134,13 +166,30 @@ MooseX::Method - Method declaration with type checking
     print "Good morning $name!\n";
   };
 
+  method greet => semi (
+    { isa => 'Str' },
+    excited => { isa => 'Bool',default => 0 },
+  ) => sub {
+    my ($self,$name,$args) = @_;
+
+    if ($args->{excited}) {
+      print "GREETINGS $name!\n";
+    } else {
+      print "Hi $name!\n";
+    }
+  };
+
   Foo->hello (who => 'world',age => 42); # This works.
 
   Foo->morning ('Jens'); # This too.
 
+  Foo->greet ('Jens',excited => 1); # And this as well.
+
   Foo->hello (who => 'world',age => 'fortytwo'); # This doesn't.
 
   Foo->morning; # This neither.
+
+  Foo->greet; # Won't work.
 
 =head1 DESCRIPTION
 
@@ -201,6 +250,25 @@ The first example will make MooseX::Method create a method which takes
 two parameters, 'foo' and 'bar', of which only 'foo' is mandatory. The
 second example will create two positional parameters with the same
 properties.
+
+There's also a third type of signature available, which lets you
+get the best from both worlds.
+
+  semi (
+    { isa => 'Int' },
+    foo => { isa => 'Int' },
+  )
+
+Here we mix the two previously mentioned signature types, which lets
+you call a method with a syntax like:
+
+  Foo->add_item ($item,protected => 1);
+
+A gotcha to be aware of is that all positional parameters becomes
+required when using this signature type. Named parameters can still
+be mandatory or optional like usual. Also, all positional
+arguments must be put first in the argument list like in the example
+used. Named parameters are put afterwards.
 
 Currently, a parameter may set any of the following fields:
 

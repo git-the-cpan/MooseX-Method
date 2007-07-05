@@ -1,8 +1,6 @@
 package MooseX::Meta::Signature;
 
-use Moose::Role;
-
-requires qw/verify_arguments/;
+use Moose;
 
 1;
 
