@@ -5,15 +5,14 @@ use Moose;
 use Carp qw/confess/;
 use Class::MOP;
 use Exporter;
-use Module::Find;
-use Moose::Meta::Class;
 use MooseX::Meta::Method::Signature;
 use MooseX::Meta::Signature::Named;
 use MooseX::Meta::Signature::Positional;
+use MooseX::Meta::Signature::Semi;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.29';
+our $VERSION = '0.30';
 
 our @EXPORT = qw/method attr named positional semi/;
 
@@ -22,35 +21,8 @@ sub import {
 
   # MooseX::Method could initialize a metaclass automagically, but I prefer
   # to leave that to the user at this time.
-
   confess "$class does not have a metaobject (Did you remember to use Moose first?)"
     unless Class::MOP::does_metaclass_exist ($class);
-
-  my @signature_metaclasses = usesub MooseX::Meta::Signature;
-
-  foreach my $signature_metaclass (@signature_metaclasses) {
-    my $shorthand = my $filename = $signature_metaclass;
-
-    $shorthand =~ s/.*:://;
-
-    Moose::Meta::Class->create ("MooseX::Signature::$shorthand" =>
-      methods => {
-        import => sub {
-          no strict qw/refs/;
-
-          my $pkg = caller;
-
-          my $constructor_name = $_[1] || lc ($shorthand);
-
-          *{$pkg."::$constructor_name"} = sub {
-            return $signature_metaclass->new (@_);
-          };
-        },
-      },
-    );
-
-    $INC{"MooseX/Signature/$shorthand.pm"} = 1;
-  }
 
   goto &Exporter::import;
 }
@@ -230,45 +202,78 @@ the method. The rest of the parameters needs not be in any particular
 order, though it's probably best for the sake of readability to keep
 the subroutine at the end.
 
-=head2 Parameters
+There are two different elements you need to be aware of, the
+signature and the parameter. A signature is (For the purpose of this
+document) a collection of parameters. A parameter is a collection of
+requirements that an individual argument needs to satisfy. No matter
+what kind of signature you use, these properties are declared the
+same way, although specific properties may behave differently
+depending on the particular signature type.
 
-The parameter specification should look something to this effect:
+=head2 Signatures
+
+MooseX::Method comes with three different signature types, and you
+will once the internal API becomes stable be able to implement your
+own signatures easily.
+
+The three different signatures types are shown below:
 
   named (
     foo => { isa => 'Int',required => 1 },
     bar => { isa => 'Int' },
   )
 
-Or for positional arguments...
+  # And methods declared are called like...
+
+  $foo->mymethod (foo => 1,bar => 2);
 
   positional (
     { isa => 'Int',required => 1 },
     { isa => 'Int' },
   )
 
-The first example will make MooseX::Method create a method which takes
-two parameters, 'foo' and 'bar', of which only 'foo' is mandatory. The
-second example will create two positional parameters with the same
-properties.
-
-There's also a third type of signature available, which lets you
-get the best from both worlds.
+  $foo->mymethod (1,2);
 
   semi (
     { isa => 'Int' },
     foo => { isa => 'Int' },
   )
 
-Here we mix the two previously mentioned signature types, which lets
-you call a method with a syntax like:
+  $foo->mymethod (1,foo => 2);
 
-  Foo->add_item ($item,protected => 1);
+The named signature type will let you specify names for the individual
+parameters. The example above declares two parameters, foo and bar,
+of which foo is mandatory. Read more about parameter properties below.
 
-A gotcha to be aware of is that all positional parameters becomes
-required when using this signature type. Named parameters can still
-be mandatory or optional like usual. Also, all positional
-arguments must be put first in the argument list like in the example
-used. Named parameters are put afterwards.
+The positional signature type lets you, unsurprisingly, declare
+positional unnamed parameters. If a parameter has the 'required'
+property set in a positional signature, a parameter is counted as
+provided if the argument list is equal or larger to its position. One
+thing about this is that it leads to a situation where a parameter
+is implicitly required if a later parameter is explicitly required.
+Even so, you should always mark all required parameters explicitly.
+
+The semi signature type combines the two signature types above. You
+may declare both named and positional parameters. Parameters do not
+need to come in any particular order (Although positional parameters
+must be ordered right relative to each other like with the positional
+signature) so it's possible to declare a semi signature like this:
+
+  semi (
+    { isa => 'Int' },
+    foo => { isa => 'Int' },
+    { isa => 'Int' },
+    bar => { isa => 'Int' },
+  )
+
+This is however not recommended for the sake of readability. Put
+positional arguments first, then named arguments last, which
+is the same order semi signature methods receive them in. Be also
+aware that all positional parameters are always required in a semi
+signature. Named parameters may be both optional or required
+however.
+
+=head2 Parameters
 
 Currently, a parameter may set any of the following fields:
 
@@ -325,9 +330,11 @@ like this:
     # Regular parameter stuff here
   ) => sub {};
 
-At present time, not many attributes will actually do much.
-
 =over4
+
+Currently, only one attribute (officially) exists. If you discover
+any other attributes while diving through the code, it's not
+guaranteed to be there at the next release.
 
 =item B<metaclass>
 

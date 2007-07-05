@@ -18,8 +18,7 @@ no_index:
 requires: 
   Carp: 0
   Class::MOP: 0.40
-  Module::Find: 0.05
   Moose: 0.24
   Scalar::Util: 1.19
   Sub::Name: 0.02
-version: 0.29
+version: 0.30
