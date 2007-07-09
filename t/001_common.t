@@ -4,7 +4,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 24;
+plan tests => 23;
 
 {
   package My::Metaclass;
@@ -15,19 +15,8 @@ plan tests => 24;
 }
 
 {
-  package XXX1;
-
-  use Test::More;
-
-  eval 'use MooseX::Method';
-  
-  like $@,qr/not have a metaobject/;
-}
-
-{
   package Foo;
 
-  use Moose;
   use MooseX::Method;
   use Test::Exception;
 
@@ -41,15 +30,12 @@ plan tests => 24;
 
   throws_ok { method xxx => named (foo => 0) => sub {} } qr/Parameter must/,'parameter declaration';
 
-  throws_ok { method xxx => sub {} } qr/provide a signature/;
-
   throws_ok { method xxx => named () } qr/provide a coderef/;
 }
 
 {
   package Foo::Attr::DefaultError;
 
-  use Moose;
   use MooseX::Method;
   use Test::Exception;
 
@@ -69,7 +55,6 @@ plan tests => 24;
 {
   package Foo::Attr;
 
-  use Moose;
   use MooseX::Method;
   use Test::More;
 
@@ -91,6 +76,14 @@ is (Foo::Attr->test1,42);
     } }
 
   method test1 => named () => sub { 42 };
+}
+
+{
+  package Foo::Nosignature;
+
+  use MooseX::Method;
+
+  method foo => sub { $_[1] };
 }
 
 is (Foo::Attr::Default->test1,42);
@@ -124,4 +117,6 @@ my $positional_signature = MooseX::Meta::Signature::Positional->new ({ metaclass
 ok $positional_signature->isa ('MooseX::Meta::Signature');
 
 ok $positional_signature->get_parameter_map;
+
+is (Foo::Nosignature->foo (43),43);
 

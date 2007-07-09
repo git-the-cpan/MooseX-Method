@@ -5,6 +5,7 @@ use Moose;
 use Carp qw/confess/;
 use Class::MOP;
 use Exporter;
+use Moose::Meta::Class;
 use MooseX::Meta::Method::Signature;
 use MooseX::Meta::Signature::Named;
 use MooseX::Meta::Signature::Positional;
@@ -12,16 +13,14 @@ use MooseX::Meta::Signature::Semi;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
 our @EXPORT = qw/method attr named positional semi/;
 
 sub import {
   my $class = caller;
 
-  # MooseX::Method could initialize a metaclass automagically, but I prefer
-  # to leave that to the user at this time.
-  confess "$class does not have a metaobject (Did you remember to use Moose first?)"
+  Moose::Meta::Class->initialize ($class)
     unless Class::MOP::does_metaclass_exist ($class);
 
   goto &Exporter::import;
@@ -35,7 +34,7 @@ sub method {
 
   my $class = caller;
 
-  my ($signature,$coderef);
+  my ($signature,$coderef,$method);
 
   my $local_attributes = {};
 
@@ -53,9 +52,6 @@ sub method {
 
   confess "You didn't provide a coderef"
     unless defined $coderef;
-
-  confess "You didn't provide a signature"
-    unless defined $signature;
 
   my $attributes;
 
@@ -75,19 +71,25 @@ sub method {
 
   subname "$class\::$name", $coderef;
 
+  my $meta = Class::MOP::get_metaclass_by_name ($class);
+
   # This is a workaround for Devel::Cover. It has the nice sideffect
   # of making dispatch wrapping redundant though.
-  $class->meta->add_package_symbol ("&${name}__original_ref" => $coderef);
-    
-  my $method = $method_metaclass->wrap_with_signature ($signature,sub {
-      my $self = shift;
+  $meta->add_package_symbol ("&__real_${name}" => $coderef);
+   
+  if (defined $signature) { 
+    $method = $method_metaclass->wrap_with_signature ($signature,sub {
+        my $self = shift;
 
-      @_ = ($self,$signature->verify_arguments (@_));
+        @_ = ($self,$signature->verify_arguments (@_));
 
-      goto $coderef;
-    });
+        goto $coderef;
+      });
+  } else {
+    $method = $method_metaclass->wrap ($coderef);
+  }
   
-  $class->meta->add_method ($name => $method);
+  $meta->add_method ($name => $method);
 
   return $method;
 }
@@ -282,11 +284,15 @@ Currently, a parameter may set any of the following fields:
 =item B<isa>
 
 If a value is provided, it must satisfy the constraints of the type
-specified in this field.
+specified in this field. This field should accept the same values
+as its counterpart in Moose attributes, see the Moose documentation
+for more details on what you can use.
 
 =item B<does>
 
-Require that the value provided is able to do a certain role.
+Require that the value provided is able to do a certain role. It's
+implied that the value must also be blessed, although setting this
+property does not alter the isa property.
 
 =item B<default>
 
