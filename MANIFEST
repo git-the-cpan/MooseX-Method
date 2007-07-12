@@ -20,9 +20,10 @@ lib/MooseX/Method.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
-t/001_common.t
-t/002_named.t
-t/003_positional.t
-t/004_semi.t
-t/010_common_2.t
+t/010_method_signature.t
+t/100_parameter.t
+t/101_signature_positional.t
+t/102_signature_named.t
+t/103_signature_semi.t
+t/200_method.t
 TODO

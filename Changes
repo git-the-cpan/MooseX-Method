@@ -1,3 +1,13 @@
+0.32 Thu. July 12, 2007
+    - Shiny new test suite!
+
+    * MooseX::Method
+      - Actually mention in the documentation that
+        signatures now are optional.
+      - Moose does no longer need to be explicitly used,
+        although it's still used as before under the
+        hood.
+
 0.31 Fri. July 9, 2007
     * MooseX::Method
       - Will now initialize a metaclass if none
@@ -8,6 +18,9 @@
     - Improved documentation.
 
 0.29 Thu. July 5, 2007
+    * MooseX::Meta::Signature
+      - This is no longer a role. It just feels better
+        that signatures isa ::Signature.
     * MooseX::Meta::Signature::Semi
       - Combined positional and named syntax.
 

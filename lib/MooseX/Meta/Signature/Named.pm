@@ -51,11 +51,5 @@ sub verify_arguments {
   return $args;
 }
 
-sub get_parameter_map {
-  my ($self) = @_;
-
-  return $self->{'%!parameter_map'};
-}
-
 1;
 

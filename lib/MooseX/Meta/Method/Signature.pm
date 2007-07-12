@@ -17,11 +17,5 @@ sub wrap_with_signature {
   return $self;
 }
 
-sub get_signature {
-  my ($self) = @_;
-
-  return $self->{'$!signature'};
-}
-
 1;
 

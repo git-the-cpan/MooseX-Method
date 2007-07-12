@@ -13,7 +13,7 @@ use MooseX::Meta::Signature::Semi;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.31';
+our $VERSION = '0.32';
 
 our @EXPORT = qw/method attr named positional semi/;
 
@@ -120,7 +120,6 @@ MooseX::Method - Method declaration with type checking
 
   package Foo;
 
-  use Moose;
   use MooseX::Method;
 
   method hello => named (
@@ -211,6 +210,10 @@ requirements that an individual argument needs to satisfy. No matter
 what kind of signature you use, these properties are declared the
 same way, although specific properties may behave differently
 depending on the particular signature type.
+
+As of version 0.31 of this module, signatures are optional in method
+declarations. If one is not provided, arguments will be passed
+directly to the coderef.
 
 =head2 Signatures
 
