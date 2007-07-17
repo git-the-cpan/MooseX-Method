@@ -1,4 +1,4 @@
-package MooseX::Meta::Signature::Semi;
+package MooseX::Meta::Signature::Combined;
 
 use Moose;
 
@@ -41,7 +41,7 @@ sub new {
   return $self;
 }
 
-sub verify_arguments {
+sub validate {
   my ($self,@args) = @_;
 
   my @positional_args = (scalar @args <= $self->{positional_signature_size} ? @args : @args[0..($self->{positional_signature_size} - 1)]);
@@ -49,8 +49,8 @@ sub verify_arguments {
   my %named_args = @args[$self->{positional_signature_size}..$#args];
 
   return
-    $self->{positional_signature}->verify_arguments (@positional_args),
-    $self->{named_signature}->verify_arguments (%named_args);
+    $self->{positional_signature}->validate (@positional_args),
+    $self->{named_signature}->validate (%named_args);
 }
 
 1;

@@ -32,13 +32,23 @@ sub new {
   return $self;
 }
 
-sub verify_arguments {
+sub validate {
   my $self = shift;
 
   my @args;
 
-  push @args,$self->{'@!parameter_map'}->[$_]->verify_argument ($_ + 1,$_[$_],($_ <= $#_ ? 1 : 0))
-    for (0 .. $#{$self->{'@!parameter_map'}});
+  my $pos;
+
+  eval {
+    for (0 .. $#{$self->{'@!parameter_map'}}) {
+      $pos = $_;
+
+      push @args,$self->{'@!parameter_map'}->[$_]->validate (( $_ <= $#_ ? $_[$_] : ()));
+    }
+  };
+
+  die "Parameter $pos: $@"
+    if $@;
 
   return @args;
 }

@@ -34,7 +34,7 @@ sub new {
   return $self;
 }
 
-sub verify_arguments {
+sub validate {
   my $self = shift;
 
   my $args;
@@ -45,8 +45,18 @@ sub verify_arguments {
     $args = { @_ };
   }
 
-  $args->{$_} = $self->{'%!parameter_map'}->{$_}->verify_argument ($_,$args->{$_},exists $args->{$_})
-    for (keys %{$self->{'%!parameter_map'}});
+  my $name;
+
+  eval {
+    for (keys %{$self->{'%!parameter_map'}}) {
+      $name = $_;
+
+      $args->{$_} = $self->{'%!parameter_map'}->{$_}->validate (( exists $args->{$_} ? $args->{$_} : ()));
+    }
+  };
+
+  die "Parameter '$name': $@"
+    if $@;
 
   return $args;
 }

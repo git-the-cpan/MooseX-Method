@@ -21,4 +21,4 @@ requires:
   Moose: 0.24
   Scalar::Util: 1.19
   Sub::Name: 0.02
-version: 0.32
+version: 0.34

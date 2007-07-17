@@ -16,9 +16,9 @@ plan tests => 9;
 
   isa_ok ($signature,'MooseX::Meta::Signature');
 
-  is_deeply ($signature->verify_arguments (foo => 1),{ foo => 1 });
+  is_deeply ($signature->validate (foo => 1),{ foo => 1 });
 
-  is_deeply ($signature->verify_arguments ({ foo => 1 }),{ foo => 1 });
+  is_deeply ($signature->validate ({ foo => 1 }),{ foo => 1 });
 }
 
 # specified
@@ -26,7 +26,7 @@ plan tests => 9;
 {
   my $signature = MooseX::Meta::Signature::Named->new (foo => { required => 1 });
 
-  throws_ok { $signature->verify_arguments ({}) } qr/must be specified/;
+  throws_ok { $signature->validate ({}) } qr/Parameter 'foo': Must be specified/;
 }
 
 # custom parameter
@@ -38,7 +38,7 @@ plan tests => 9;
 
   extends qw/MooseX::Meta::Parameter/;
 
-  sub verify_argument { 42 };
+  sub validate { 42 };
 }
 
 {
@@ -48,7 +48,7 @@ plan tests => 9;
 
   my $signature = MooseX::Meta::Signature::Named->new (foo => Foo::Parameter->new);
 
-  is_deeply ($signature->verify_arguments ({ foo => 1 }),{ foo => 42 });
+  is_deeply ($signature->validate ({ foo => 1 }),{ foo => 42 });
 }
 
 # custom metaclass
@@ -56,6 +56,6 @@ plan tests => 9;
 {
   my $signature = MooseX::Meta::Signature::Named->new (foo => { metaclass => 'Foo::Parameter' });
 
-  is_deeply ($signature->verify_arguments ({ foo => 1 }),{ foo => 42 });
+  is_deeply ($signature->validate ({ foo => 1 }),{ foo => 42 });
 }
 

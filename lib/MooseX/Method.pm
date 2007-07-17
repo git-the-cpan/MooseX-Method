@@ -9,13 +9,13 @@ use Moose::Meta::Class;
 use MooseX::Meta::Method::Signature;
 use MooseX::Meta::Signature::Named;
 use MooseX::Meta::Signature::Positional;
-use MooseX::Meta::Signature::Semi;
+use MooseX::Meta::Signature::Combined;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.32';
+our $VERSION = '0.34';
 
-our @EXPORT = qw/method attr named positional semi/;
+our @EXPORT = qw/method attr named positional combined semi/;
 
 sub import {
   my $class = caller;
@@ -81,7 +81,17 @@ sub method {
     $method = $method_metaclass->wrap_with_signature ($signature,sub {
         my $self = shift;
 
-        @_ = ($self,$signature->verify_arguments (@_));
+        eval {
+          @_ = ($self,$signature->validate (@_));
+        };
+
+        if ($@) {
+          if ($attributes->{noconfess}) {
+            die $@;
+          } else {
+            confess $@;
+          }
+        }
 
         goto $coderef;
       });
@@ -104,7 +114,9 @@ sub named { MooseX::Meta::Signature::Named->new (@_) }
 
 sub positional { MooseX::Meta::Signature::Positional->new (@_) }
 
-sub semi { MooseX::Meta::Signature::Semi->new (@_) }
+sub combined { MooseX::Meta::Signature::Combined->new (@_) }
+
+*semi = \&combined;
 
 1;
 
@@ -139,7 +151,7 @@ MooseX::Method - Method declaration with type checking
     print "Good morning $name!\n";
   };
 
-  method greet => semi (
+  method greet => combined (
     { isa => 'Str' },
     excited => { isa => 'Bool',default => 0 },
   ) => sub {
@@ -239,7 +251,7 @@ The three different signatures types are shown below:
 
   $foo->mymethod (1,2);
 
-  semi (
+  combined (
     { isa => 'Int' },
     foo => { isa => 'Int' },
   )
@@ -258,13 +270,13 @@ thing about this is that it leads to a situation where a parameter
 is implicitly required if a later parameter is explicitly required.
 Even so, you should always mark all required parameters explicitly.
 
-The semi signature type combines the two signature types above. You
+The combined signature type combines the two signature types above. You
 may declare both named and positional parameters. Parameters do not
 need to come in any particular order (Although positional parameters
 must be ordered right relative to each other like with the positional
-signature) so it's possible to declare a semi signature like this:
+signature) so it's possible to declare a combined signature like this:
 
-  semi (
+  combined (
     { isa => 'Int' },
     foo => { isa => 'Int' },
     { isa => 'Int' },
@@ -273,10 +285,14 @@ signature) so it's possible to declare a semi signature like this:
 
 This is however not recommended for the sake of readability. Put
 positional arguments first, then named arguments last, which
-is the same order semi signature methods receive them in. Be also
-aware that all positional parameters are always required in a semi
+is the same order combined signature methods receive them in. Be also
+aware that all positional parameters are always required in a combined
 signature. Named parameters may be both optional or required
 however.
+
+B<Note: "combined" used to be known as "semi". You can still use
+"semi" to declare combined signatures, but this will probably
+stop working sometimes after version 1.0 is released.>
 
 =head2 Parameters
 
@@ -348,6 +364,11 @@ guaranteed to be there at the next release.
 =item B<metaclass>
 
 Sets the metaclass to use for when creating the method.
+
+=item B<noconfess>
+
+Die on exceptions instead of confessing. This means no stack trace when
+an error is encountered during parameter validation.
 
 =head1 FUTURE
 

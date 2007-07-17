@@ -1,3 +1,21 @@
+0.34 Tue. July 17, 2007
+    - New internal error handling scheme, error messages
+      will look slightly different.
+
+    * MooseX::Method
+      - You may now specify the "noconfess" attribute to
+        remove the backtrace on validation error.
+
+    * MooseX::Meta::Signature::Semi
+      - Now known as...
+
+    * MooseX::Meta::Signature::Combined
+      - Which doesn't cause as much noise in my head.
+        The keyword "semi" will continue to work for now,
+        but will probably be removed sometime after
+        version 1.0. More than likely, I'll add some noisy
+        warnings to it at 1.0.
+
 0.32 Thu. July 12, 2007
     - Shiny new test suite!
 

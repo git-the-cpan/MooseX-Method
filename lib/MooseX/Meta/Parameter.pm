@@ -11,8 +11,10 @@ has required  => (isa => 'Bool');
 has default   => (isa => 'Defined');
 has coerce    => (isa => 'Bool');
 
-sub verify_argument {
-  my ($self,$name,$value,$provided) = @_;
+sub validate {
+  my ($self,$value) = @_;
+
+  my $provided = ($#_ > 0 ? 1 : 0);
 
   if (! $provided && defined $self->{default}) {
     if (ref $self->{default} eq 'CODE') {
@@ -30,28 +32,28 @@ sub verify_argument {
 
       unless ($type->check ($value)) {
         if ($self->{coerce}) {
-          confess "Parameter $name wants to coerce but type $self->{isa} does not support this"
+          die "Wants to coerce but type $self->{isa} does not support this\n"
             unless $type->has_coercion;
 
           my $return = $type->coerce ($value);
 
-          confess "Parameter $name is wrong type (got '$return' which isn't a '$self->{isa}') and couldn't coerce"
+          die "Wrong type (got '$return' which isn't a '$self->{isa}') and couldn't coerce\n"
             unless $type->check ($return);
 
           $value = $return;
         } else {
-          confess "Parameter $name is wrong type (got '$value' which isn't a '$self->{isa}')";
+          die "Wrong type (got '$value' which isn't a '$self->{isa}')\n";
         }
       }
     }
 
     if (defined $self->{does}) {
       unless (blessed $value && $value->can ('does') && $value->does ($self->{does})) {
-        confess "Parameter $name does not do '$self->{does}'";
+        die "Does not do '$self->{does}'\n";
       }
     }
   } elsif ($self->{required}) {
-    confess "Parameter $name must be specified";
+    die "Must be specified\n";
   }
 
   return $value;

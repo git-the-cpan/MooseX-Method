@@ -6,7 +6,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 16;
+plan tests => 15;
 
 # basic
 
@@ -15,9 +15,9 @@ plan tests => 16;
 
   isa_ok ($parameter,'MooseX::Meta::Parameter');
   
-  is ($parameter->verify_argument (foo => 42,1),42);
+  is ($parameter->validate (42),42);
 
-  is ($parameter->verify_argument (foo => 42,0),42);
+  ok (!$parameter->validate);
 }
 
 # required
@@ -25,9 +25,9 @@ plan tests => 16;
 {
   my $parameter = MooseX::Meta::Parameter->new (required => 1);
 
-  throws_ok { $parameter->verify_argument (foo => 42,0) } qr/Parameter foo must be specified/;
+  throws_ok { $parameter->validate } qr/Must be specified/;
 
-  is ($parameter->verify_argument (foo => 42,1),42);
+#  is ($parameter->validate (42),42);
 }
 
 # type
@@ -35,9 +35,9 @@ plan tests => 16;
 {
   my $parameter = MooseX::Meta::Parameter->new (isa => 'Int');
 
-  is ($parameter->verify_argument (foo => 42,1),42);
+  is ($parameter->validate (42),42);
 
-  throws_ok { $parameter->verify_argument (foo => 'Foo',1) } qr/Parameter foo is wrong type/;
+  throws_ok { $parameter->validate ('Foo') } qr/Wrong type/;
 }
 
 # default value
@@ -45,7 +45,7 @@ plan tests => 16;
 {
   my $parameter = MooseX::Meta::Parameter->new (default => 42);
 
-  is ($parameter->verify_argument (foo => undef,0),42);
+  is ($parameter->validate,42);
 }
 
 # default coderef
@@ -53,7 +53,7 @@ plan tests => 16;
 {
   my $parameter = MooseX::Meta::Parameter->new (default => sub { 42 });
 
-  is ($parameter->verify_argument (foo => undef,0),42);
+  is ($parameter->validate,42);
 }
 
 # coerce
@@ -69,15 +69,15 @@ coerce 'SmallInt'
 {
   my $parameter = MooseX::Meta::Parameter->new (isa => 'Int',coerce => 1);
 
-  throws_ok { $parameter->verify_argument (foo => 'Foo',1) } qr/does not support this/;
+  throws_ok { $parameter->validate ('Foo') } qr/does not support this/;
 }
     
 {
   my $parameter = MooseX::Meta::Parameter->new (isa => 'SmallInt',coerce => 1);
 
-  throws_ok { $parameter->verify_argument (foo => 'Foo',1) } qr/and couldn't coerce/;
+  throws_ok { $parameter->validate ('Foo') } qr/and couldn't coerce/;
 
-  is ($parameter->verify_argument (foo => 42,1),5);
+  is ($parameter->validate (42,1),5);
 }
 
 # does
@@ -111,12 +111,12 @@ coerce 'SmallInt'
 {
   my $parameter = MooseX::Meta::Parameter->new (does => 'Foo::Role');
 
-  throws_ok { $parameter->verify_argument (foo => 'Foo',1) } qr/does not do/;
+  throws_ok { $parameter->validate ('Foo') } qr/Does not do/;
 
-  throws_ok { $parameter->verify_argument (foo => Foo1->new,1) } qr/does not do/;
+  throws_ok { $parameter->validate (Foo1->new) } qr/Does not do/;
 
-  throws_ok { $parameter->verify_argument (foo => Foo2->new,1) } qr/does not do/;
+  throws_ok { $parameter->validate (Foo2->new) } qr/Does not do/;
 
-  lives_ok { $parameter->verify_argument (foo => Foo3->new,1) };
+  lives_ok { $parameter->validate (Foo3->new) };
 }
 

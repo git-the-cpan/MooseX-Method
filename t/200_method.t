@@ -5,7 +5,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 16;
+plan tests => 19;
 
 {
   package XXX;
@@ -52,7 +52,9 @@ isa_ok (positional,'MooseX::Meta::Signature::Positional');
 
 isa_ok (named,'MooseX::Meta::Signature::Named');
 
-isa_ok (semi,'MooseX::Meta::Signature::Semi');
+isa_ok (combined,'MooseX::Meta::Signature::Combined');
+
+isa_ok (semi,'MooseX::Meta::Signature::Combined');
 
 {
   package Foo::Method;
@@ -69,12 +71,17 @@ isa_ok (semi,'MooseX::Meta::Signature::Semi');
 
   use MooseX::Method;
   use Test::More;
+  use Test::Exception;
+
+  # declaration without signature
 
   method test1 => sub { 42 };
 
   can_ok ('Foo','test1');
 
   is (Foo->test1,42);
+
+  # declaration with signature
 
   method test2 => positional () => sub { 42 };
 
@@ -87,5 +94,23 @@ isa_ok (semi,'MooseX::Meta::Signature::Semi');
   method test_metaclass => attr (metaclass => 'Foo::Method') => sub {};
 
   isa_ok (Foo->meta->get_method ('test_metaclass'),'Foo::Method');
+
+  # confess
+
+  method test_confess => positional (
+    { required => 1 },
+  ) => sub {};
+
+  throws_ok { Foo->test_confess } qr/200_method/;
+
+  # noconfess
+  
+  method test_noconfess => attr (
+    noconfess => 1,
+  ) => positional (
+    { required => 1 },
+  ) => sub {};
+
+  throws_ok { Foo->test_noconfess } qr/(?!200_method)/;
 }
 
