@@ -5,7 +5,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 19;
+plan tests => 18;
 
 {
   package XXX;
@@ -95,22 +95,12 @@ isa_ok (semi,'MooseX::Meta::Signature::Combined');
 
   isa_ok (Foo->meta->get_method ('test_metaclass'),'Foo::Method');
 
-  # confess
+  # croak
 
   method test_confess => positional (
     { required => 1 },
   ) => sub {};
 
   throws_ok { Foo->test_confess } qr/200_method/;
-
-  # noconfess
-  
-  method test_noconfess => attr (
-    noconfess => 1,
-  ) => positional (
-    { required => 1 },
-  ) => sub {};
-
-  throws_ok { Foo->test_noconfess } qr/(?!200_method)/;
 }
 

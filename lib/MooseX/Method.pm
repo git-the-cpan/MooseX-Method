@@ -2,7 +2,7 @@ package MooseX::Method;
 
 use Moose;
 
-use Carp qw/confess/;
+use Carp qw/croak/;
 use Class::MOP;
 use Exporter;
 use Moose::Meta::Class;
@@ -13,7 +13,7 @@ use MooseX::Meta::Signature::Combined;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.34';
+our $VERSION = '0.35';
 
 our @EXPORT = qw/method attr named positional combined semi/;
 
@@ -85,13 +85,8 @@ sub method {
           @_ = ($self,$signature->validate (@_));
         };
 
-        if ($@) {
-          if ($attributes->{noconfess}) {
-            die $@;
-          } else {
-            confess $@;
-          }
-        }
+        croak $@
+          if $@;
 
         goto $coderef;
       });
@@ -357,18 +352,13 @@ like this:
 
 =over4
 
-Currently, only one attribute (officially) exists. If you discover
-any other attributes while diving through the code, it's not
-guaranteed to be there at the next release.
+If you discover any other attributes than those listed here while
+diving through the code, they're not guaranteed to be there at the
+next release.
 
 =item B<metaclass>
 
 Sets the metaclass to use for when creating the method.
-
-=item B<noconfess>
-
-Die on exceptions instead of confessing. This means no stack trace when
-an error is encountered during parameter validation.
 
 =head1 FUTURE
 

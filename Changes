@@ -1,3 +1,9 @@
+0.35 Tue. July 17, 2007
+    * MooseX::Method
+      - Removed noconfess in favour of simply using croak
+        which gives you pretty much the same effect.
+        Huzzahs to mst.
+
 0.34 Tue. July 17, 2007
     - New internal error handling scheme, error messages
       will look slightly different.
