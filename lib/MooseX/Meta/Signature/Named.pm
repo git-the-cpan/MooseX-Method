@@ -63,3 +63,57 @@ sub validate {
 
 1;
 
+__END__
+
+=pod
+
+=head1 NAME
+
+MooseX::Meta::Signature::Named - Named signature metaclass
+
+=head1 WARNING
+
+This API is unstable, it may change at any time. This should not
+affect ordinary L<MooseX::Method> use.
+
+=head1 SYNOPSIS
+
+  use MooseX::Meta::Signature::Named;
+
+  my $signature = MooseX::Meta::Signature::Named->new (
+    foo => { required => 1 },
+    bar => { required => 1 },
+  );
+
+  my $results;
+
+  eval {
+    $results = $signature->validate (foo => 1);
+  };
+
+=head1 METHODS
+
+=head2 validate
+
+Validate the arguments against the signature. Accepts arguments in the
+form of a hashref or a hash. Returns a hashref of the validated
+arguments or throws an exception on validation error.
+
+=head1 BUGS
+
+Most software has bugs. This module probably isn't an exception. 
+If you find a bug please either email me, or add the bug to cpan-RT.
+
+=head1 AUTHOR
+
+Anders Nor Berle E<lt>debolaz@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2007 by Anders Nor Berle.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
+=cut
+

@@ -16,6 +16,7 @@ requires       'Sub::Name' => '0.02';
 
 build_requires 'Test::More' => '0.70';
 build_requires 'Test::Exception' => '0.25';
+build_requires 'Test::Pod' => '1.26';
 
 auto_install;
 WriteAll;

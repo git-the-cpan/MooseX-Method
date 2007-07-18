@@ -13,7 +13,7 @@ use MooseX::Meta::Signature::Combined;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.35';
+our $VERSION = '0.36';
 
 our @EXPORT = qw/method attr named positional combined semi/;
 
@@ -202,7 +202,9 @@ declaration and Moose types. It doesn't get much Moosier than this.
 
 =head1 DECLARING METHODS
 
-  method $name => named () => sub {}
+  method $name => sub {};
+
+  method $name => named () => sub {};
 
 The exported function method installs a method into the class from
 which it is called from. The first parameter it takes is the name of
@@ -289,11 +291,15 @@ B<Note: "combined" used to be known as "semi". You can still use
 "semi" to declare combined signatures, but this will probably
 stop working sometimes after version 1.0 is released.>
 
+"combined" used to be known as "semi". You can still use
+"semi" to declare combined signatures, but this will probably
+stop working sometimes after version 1.0 is released.
+
 =head2 Parameters
 
 Currently, a parameter may set any of the following fields:
 
-=over4
+=over 4
 
 =item B<isa>
 
@@ -328,14 +334,14 @@ of how to coerce.
 This is used as parameter metaclass if specified. If you don't know
 what this means, read the documentation for Moose.
 
+=back
+
 =head2 Attributes
 
 To set a method attribute, use the following syntax:
 
   method foo => attr (
     attribute => $value,
-  ) => named (
-    # Regular parameter stuff here
   ) => sub {};
 
 You can set the default method attributes for a class by having a
@@ -346,19 +352,45 @@ like this:
 
   method foo => attr (
     overridden_attribute => $value,
-  ) => named (
-    # Regular parameter stuff here
   ) => sub {};
-
-=over4
 
 If you discover any other attributes than those listed here while
 diving through the code, they're not guaranteed to be there at the
 next release.
 
+=over 4
+
 =item B<metaclass>
 
 Sets the metaclass to use for when creating the method.
+
+=back
+
+=head1 EXPORTED FUNCTIONS
+
+=head2 method
+
+The function for declaring methods.
+
+=head2 named
+
+A function for constructing a named signature.
+
+=head2 positional
+
+A function for constructing a positional signature.
+
+=head2 combined
+
+A function for constructing a combined signature.
+
+=head2 semi
+
+An alias for the combined structure. Will be removed post version 1.0.
+
+=head2 attr
+
+A function for declaring method attributes.
 
 =head1 FUTURE
 
@@ -382,18 +414,22 @@ statement. This affects things like 'before' and 'after'.
 
 =head1 ACKNOWLEDGEMENTS
 
-=over4
+=over 4
 
 =item Stevan Little for making Moose and luring me into the
 world of metafoo.
 
+=back
+
 =head1 SEE ALSO
 
-=over4
+=over 4
 
 =item L<Moose>
 
 =item The #moose channel on irc.perl.org
+
+=back
 
 =head1 BUGS
 

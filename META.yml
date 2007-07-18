@@ -4,6 +4,7 @@ author: Anders Nor Berle <debolaz@gmail.com>
 build_requires: 
   Test::Exception: 0.25
   Test::More: 0.70
+  Test::Pod: 1.26
 distribution_type: module
 generated_by: Module::Install version 0.67
 license: perl
@@ -21,4 +22,4 @@ requires:
   Moose: 0.24
   Scalar::Util: 1.19
   Sub::Name: 0.02
-version: 0.35
+version: 0.36

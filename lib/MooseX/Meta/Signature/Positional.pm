@@ -55,3 +55,55 @@ sub validate {
 
 1;
 
+__END__
+
+=pod
+
+=head1 NAME
+
+MooseX::Meta::Signature::Positional - Positional signature metaclass
+
+=head1 WARNING
+
+This API is unstable, it may change at any time. This should not
+affect ordinary L<MooseX::Method> use.
+
+=head1 SYNOPSIS
+
+  use MooseX::Meta::Signature::Positional;
+
+  my $signature = MooseX::Meta::Signature::Positional->new (
+    { required => 1 }
+  );
+
+  my @results;
+
+  eval {
+    @results = $signature->validate (42);
+  };
+
+=head1 METHODS
+
+=head2 validate
+
+Validate the arguments against the signature. Returns a list of the
+validated arguments or throws an exception on validation error.
+
+=head1 BUGS
+
+Most software has bugs. This module probably isn't an exception. 
+If you find a bug please either email me, or add the bug to cpan-RT.
+
+=head1 AUTHOR
+
+Anders Nor Berle E<lt>debolaz@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2007 by Anders Nor Berle.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
+=cut
+

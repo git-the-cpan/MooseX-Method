@@ -19,3 +19,58 @@ sub wrap_with_signature {
 
 1;
 
+__END__
+
+=pod
+
+=head1 NAME
+
+MooseX::Meta::Method::Signature - Signature supporting method metaclass
+
+=head1 WARNING
+
+This API is unstable, it may change at any time. This should not
+affect ordinary L<MooseX::Method> usage.
+
+=head1 SYNOPSIS
+
+  use MooseX::Meta::Method::Signature;
+  use MooseX::Meta::Signature::Named;
+
+  my $method = MooseX::Meta::Method::Signature->wrap_with_signature (
+    MooseX::Meta::Signature::Named->new,
+    sub { print "Hello world!\n" },
+  );
+
+  Someclass->meta->add_method (foo => $method);
+
+=head1 DESCRIPTION
+
+A subclass of L<Moose::Meta::Method> that has some added attributes
+and methods to support signatures.
+
+=head1 METHODS
+
+=head2 wrap_with_signature
+
+Similar to the wrap method from L<Moose::Meta::Method> but lets you
+specify a signature for your coderef.
+
+=head1 BUGS
+
+Most software has bugs. This module probably isn't an exception. 
+If you find a bug please either email me, or add the bug to cpan-RT.
+
+=head1 AUTHOR
+
+Anders Nor Berle E<lt>debolaz@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2007 by Anders Nor Berle.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
+
+=cut
+
