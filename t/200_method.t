@@ -41,7 +41,7 @@ plan tests => 18;
   use MooseX::Method;
   use Test::Exception;
 
-  sub _default_method_attributes { {} }
+  default_attr ();
 
   lives_ok { method foo => sub {} };
 }

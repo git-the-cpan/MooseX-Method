@@ -53,6 +53,17 @@ sub validate {
   return @args;
 }
 
+sub export {
+  my ($self) = @_;
+
+  my $export = [];
+
+  push @$export,$_->export
+    for @{$self->{'@!parameter_map'}};
+
+  return $export;
+}
+
 1;
 
 __END__
@@ -66,7 +77,7 @@ MooseX::Meta::Signature::Positional - Positional signature metaclass
 =head1 WARNING
 
 This API is unstable, it may change at any time. This should not
-affect ordinary L<MooseX::Method> use.
+affect ordinary L<MooseX::Method> usage.
 
 =head1 SYNOPSIS
 
@@ -84,10 +95,18 @@ affect ordinary L<MooseX::Method> use.
 
 =head1 METHODS
 
-=head2 validate
+=over 4
+
+=item B<validate>
 
 Validate the arguments against the signature. Returns a list of the
 validated arguments or throws an exception on validation error.
+
+=item B<export>
+
+Exports a data structure representing the signature.
+
+=back
 
 =head1 BUGS
 

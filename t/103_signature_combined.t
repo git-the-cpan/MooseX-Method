@@ -5,7 +5,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 4;
+plan tests => 5;
 
 # basic
 
@@ -25,5 +25,13 @@ plan tests => 4;
   my $signature = MooseX::Meta::Signature::Combined->new ({},foo => {});
 
   throws_ok { $signature->validate } qr/Parameter 0: Must be specified/;
+}
+
+# export
+
+{
+  my $signature = MooseX::Meta::Signature::Combined->new ({ required => 1 },foo => { required => 1 });
+
+  is_deeply ($signature->export,[ [ { required => 1 } ],{ foo => { required => 1 } }]);
 }
 

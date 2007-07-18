@@ -53,6 +53,18 @@ sub validate {
     $self->{named_signature}->validate (%named_args);
 }
 
+sub export {
+  my ($self) = @_;
+
+  my $export = [];
+
+  push @$export,$self->{positional_signature}->export;
+
+  push @$export,$self->{named_signature}->export;
+
+  return $export;
+}
+
 1;
 
 __END__
@@ -66,7 +78,7 @@ MooseX::Meta::Signature::Combined - Combined signature metaclass
 =head1 WARNING
 
 This API is unstable, it may change at any time. This should not
-affect ordinary L<MooseX::Method> use.
+affect ordinary L<MooseX::Method> usage.
 
 =head1 SYNOPSIS
 
@@ -85,7 +97,9 @@ affect ordinary L<MooseX::Method> use.
 
 =head1 METHODS
 
-=head2 validate
+=over 4
+
+=item B<validate>
 
 Validates the arguments against the signature. The first arguments
 must be the positional ones. The named arguments must be in the
@@ -93,6 +107,12 @@ form of a hash, unlike the named signature this does not support
 hashrefs. Returns a list of the validated positional arguments
 and a hashref of the validated named arguments or throws an
 exception on validation error.
+
+=item B<export>
+
+Exports a data structure representing the signature.
+
+=back
 
 =head1 BUGS
 

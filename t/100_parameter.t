@@ -6,7 +6,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 15;
+plan tests => 16;
 
 # basic
 
@@ -118,5 +118,13 @@ coerce 'SmallInt'
   throws_ok { $parameter->validate (Foo2->new) } qr/Does not do/;
 
   lives_ok { $parameter->validate (Foo3->new) };
+}
+
+# export
+
+{
+  my $parameter = MooseX::Meta::Parameter->new (required => 1);
+
+  is_deeply ($parameter->export,{ required => 1 });
 }
 

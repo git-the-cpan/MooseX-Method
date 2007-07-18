@@ -13,9 +13,9 @@ use MooseX::Meta::Signature::Combined;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.36';
+our $VERSION = '0.37';
 
-our @EXPORT = qw/method attr named positional combined semi/;
+our @EXPORT = qw/method attr default_attr named positional combined semi/;
 
 sub import {
   my $class = caller;
@@ -103,6 +103,16 @@ sub attr {
   my (%attributes) = @_;
 
   return \%attributes;
+}
+
+sub default_attr {
+  my $class = caller;
+
+  my $meta = Class::MOP::get_metaclass_by_name ($class);
+
+  $meta->add_method (_default_method_attributes => sub { attr (@_) });
+
+  return;
 }
 
 sub named { MooseX::Meta::Signature::Named->new (@_) }
@@ -287,14 +297,6 @@ aware that all positional parameters are always required in a combined
 signature. Named parameters may be both optional or required
 however.
 
-B<Note: "combined" used to be known as "semi". You can still use
-"semi" to declare combined signatures, but this will probably
-stop working sometimes after version 1.0 is released.>
-
-"combined" used to be known as "semi". You can still use
-"semi" to declare combined signatures, but this will probably
-stop working sometimes after version 1.0 is released.
-
 =head2 Parameters
 
 Currently, a parameter may set any of the following fields:
@@ -344,11 +346,10 @@ To set a method attribute, use the following syntax:
     attribute => $value,
   ) => sub {};
 
-You can set the default method attributes for a class by having a
-hashref with them returned from the method _default_method_attributes
-like this:
+You can set the default method attributes for a class by using the
+function default_attr like this:
 
-  sub _default_method_attributes { attr (attribute => $value) }
+  default_attr (attribute => $value);
 
   method foo => attr (
     overridden_attribute => $value,
@@ -368,29 +369,37 @@ Sets the metaclass to use for when creating the method.
 
 =head1 EXPORTED FUNCTIONS
 
-=head2 method
+=over 4
+
+=item B<method>
 
 The function for declaring methods.
 
-=head2 named
+=item B<named>
 
 A function for constructing a named signature.
 
-=head2 positional
+=item B<positional>
 
 A function for constructing a positional signature.
 
-=head2 combined
+=item B<combined>
 
 A function for constructing a combined signature.
 
-=head2 semi
+=item B<semi>
 
-An alias for the combined structure. Will be removed post version 1.0.
+An alias for the combined structure. B<Will be removed post version 1.0.>
 
-=head2 attr
+=item B<attr>
 
 A function for declaring method attributes.
+
+=item B<default_attr>
+
+A function for setting the default attributes on methods of a class.
+
+=back
 
 =head1 FUTURE
 

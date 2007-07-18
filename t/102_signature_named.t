@@ -5,7 +5,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 9;
+plan tests => 10;
 
 # basic
 
@@ -57,5 +57,13 @@ plan tests => 9;
   my $signature = MooseX::Meta::Signature::Named->new (foo => { metaclass => 'Foo::Parameter' });
 
   is_deeply ($signature->validate ({ foo => 1 }),{ foo => 42 });
+}
+
+# export
+
+{
+  my $signature = MooseX::Meta::Signature::Named->new (foo => { required => 1 });
+
+  is_deeply ($signature->export,{ foo => { required => 1 } });
 }
 

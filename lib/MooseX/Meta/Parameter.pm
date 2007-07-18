@@ -59,6 +59,18 @@ sub validate {
   return $value;
 }
 
+sub export {
+  my ($self) = @_;
+
+  my $export = {};
+  
+  for (keys %$self) {
+    $export->{$_} = $self->{$_} if defined $self->{$_};
+  }
+
+  return $export;
+}
+
 1;
 
 __END__
@@ -72,7 +84,7 @@ MooseX::Meta::Parameter - Parameter metaclass
 =head1 WARNING
 
 This API is unstable, it may change at any time. This should not
-affect ordinary L<MooseX::Method> use.
+affect ordinary L<MooseX::Method> usage.
 
 =head1 SYNOPSIS
 
@@ -86,18 +98,22 @@ affect ordinary L<MooseX::Method> use.
     $result = $parameter->validate ("foo");
   };
 
-  if ($@) {
-    print "God help us all!\n";
-  } else {
-    print "Your argument: $result\n";
-  }
+  print Dumper($parameter->export);
 
 =head1 METHODS
 
-=head2 validate
+=over 4
+
+=item B<validate>
 
 Takes an argument, validates it, and returns the argument or possibly
 a coerced version of it. Exceptions are thrown on validation failure.
+
+=item B<export>
+
+Exports a data structure representing the parameter.
+
+=back
 
 =head1 BUGS
 
