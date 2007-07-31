@@ -1,3 +1,4 @@
+use Moose::Util::TypeConstraints;
 use MooseX::Meta::Signature::Named;
 use Test::More;
 use Test::Exception;
@@ -5,7 +6,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 10;
+plan tests => 12;
 
 # basic
 
@@ -26,7 +27,7 @@ plan tests => 10;
 {
   my $signature = MooseX::Meta::Signature::Named->new (foo => { required => 1 });
 
-  throws_ok { $signature->validate ({}) } qr/Parameter 'foo': Must be specified/;
+  throws_ok { $signature->validate ({}) } qr/Parameter \(foo\): Must be specified/;
 }
 
 # custom parameter
@@ -65,5 +66,21 @@ plan tests => 10;
   my $signature = MooseX::Meta::Signature::Named->new (foo => { required => 1 });
 
   is_deeply ($signature->export,{ foo => { required => 1 } });
+}
+
+# exception handling
+
+{
+  my $signature = MooseX::Meta::Signature::Named->new (foo => { isa => subtype ('Int',where { die 'Foo' }) });
+
+  throws_ok { $signature->validate (foo => 43) } qr/Foo/;
+}
+
+{
+  my $signature = MooseX::Meta::Signature::Named->new (foo => { isa => subtype ('Int',where { die bless ({},'Foo') }) });
+
+  eval { $signature->validate (foo => 43) };
+
+  is (ref $@,'Foo');
 }
 

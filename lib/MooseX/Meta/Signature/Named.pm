@@ -55,8 +55,15 @@ sub validate {
     }
   };
 
-  die "Parameter '$name': $@"
-    if $@;
+  if ($@) {
+    if (blessed $@ && $@->isa ('MooseX::Method::Exception')) {
+      $@->error ("Parameter ($name): " . $@->error);
+
+      $@->rethrow;
+    } else {
+      die $@;
+    }
+  }
 
   return $args;
 }
@@ -71,6 +78,8 @@ sub export {
 
   return $export;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;
 

@@ -2,6 +2,6 @@
  TODO
 ------
 
-Although the tests gives a relatively good coverage, they need to be
-rewritten in order to suck less.
+* Find a good API for the metaclasses.
+  - Specifically, a good way to traverse parameters.
 

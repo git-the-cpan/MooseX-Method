@@ -13,7 +13,7 @@ use MooseX::Meta::Signature::Combined;
 use Scalar::Util qw/blessed/;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.37';
+our $VERSION = '0.39';
 
 our @EXPORT = qw/method attr default_attr named positional combined semi/;
 
@@ -85,8 +85,13 @@ sub method {
           @_ = ($self,$signature->validate (@_));
         };
 
-        croak $@
-          if $@;
+        if ($@) {
+          if (blessed $@ && $@->isa ('MooseX::Method::Exception')) {
+            croak $@->error;
+          } else {
+            die $@;
+          }
+        }
 
         goto $coderef;
       });

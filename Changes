@@ -1,3 +1,18 @@
+0.39 Wed. August 1, 2007
+    * MooseX::Meta::Parameter
+      - Moved some checks from runtime to compiletime,
+        which means performance improvements.
+      - Support for union types (See Moose docs)
+      - Support for specifying classnames as types.
+
+    * MooseX::Meta::Method::Signature
+      - Added methods for reading the signature.
+
+    * MooseX::Method::Exception
+      - New class for improved exception handling. The
+        new exception handling is currently only used
+        internally and will not affect users.
+
 0.37 Wed. July 18, 2007
     * MooseX::Meta::Parameter
     * MooseX::Meta::Signature::Named

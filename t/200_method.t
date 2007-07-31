@@ -1,3 +1,4 @@
+use Moose::Util::TypeConstraints;
 use MooseX::Method;
 use Test::More;
 use Test::Exception;
@@ -5,7 +6,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 18;
+plan tests => 20;
 
 {
   package XXX;
@@ -69,6 +70,7 @@ isa_ok (semi,'MooseX::Meta::Signature::Combined');
 
   use Moose;
 
+  use Moose::Util::TypeConstraints;
   use MooseX::Method;
   use Test::More;
   use Test::Exception;
@@ -95,12 +97,26 @@ isa_ok (semi,'MooseX::Meta::Signature::Combined');
 
   isa_ok (Foo->meta->get_method ('test_metaclass'),'Foo::Method');
 
-  # croak
+  # exceptions
 
-  method test_confess => positional (
+  method test_exception_mxmethod => positional (
     { required => 1 },
   ) => sub {};
 
-  throws_ok { Foo->test_confess } qr/200_method/;
+  throws_ok { Foo->test_exception_mxmethod } qr/200_method/;
+
+  method test_exception_user_plain => positional (
+    { isa => subtype ('Int',where { die 'Foo' }) },
+  ) => sub {};
+
+  throws_ok { Foo->test_exception_user_plain (42) } qr/Foo/;
+
+  method test_exception_user_object => positional (
+    { isa => subtype ('Int',where { die bless ({},'Foo') }) },
+  ) => sub {};
+
+  eval { Foo->test_exception_user_object (42) };
+
+  is (ref $@,'Foo');
 }
 

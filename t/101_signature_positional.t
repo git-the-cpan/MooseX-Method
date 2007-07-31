@@ -1,4 +1,4 @@
-use Data::Dumper;
+use Moose::Util::TypeConstraints;
 use MooseX::Meta::Parameter;
 use MooseX::Meta::Signature::Positional;
 use Test::More;
@@ -7,7 +7,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 10;
+plan tests => 12;
 
 # basic
 
@@ -65,5 +65,21 @@ plan tests => 10;
   my $signature = MooseX::Meta::Signature::Positional->new ({ required => 1 });
 
   is_deeply ($signature->export,[ { required => 1 } ]);
+}
+
+# exception handling
+
+{
+  my $signature = MooseX::Meta::Signature::Positional->new ({ isa => subtype ('Int',where { die 'Foo' }) });
+
+  throws_ok { $signature->validate (42) } qr/Foo/;
+}
+
+{
+  my $signature = MooseX::Meta::Signature::Positional->new ({ isa => subtype ('Int',where { die bless ({},'Foo') }) });
+
+  eval { $signature->validate (42) };
+
+  is (ref $@,'Foo');
 }
 

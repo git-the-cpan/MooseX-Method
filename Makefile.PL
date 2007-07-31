@@ -13,6 +13,7 @@ requires       'Class::MOP' => '0.40';
 requires       'Carp' => '0';
 requires       'Scalar::Util' => '1.19';
 requires       'Sub::Name' => '0.02';
+requires       'Module::Find' => '0.05';
 
 build_requires 'Test::More' => '0.70';
 build_requires 'Test::Exception' => '0.25';

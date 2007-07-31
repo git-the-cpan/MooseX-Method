@@ -2,6 +2,7 @@ package MooseX::Meta::Signature::Positional;
 
 use Moose;
 
+use Carp qw/croak/;
 use MooseX::Meta::Parameter;
 use Scalar::Util qw/blessed/;
 
@@ -23,7 +24,7 @@ sub new {
       }
     }
 
-    confess "Parameter must be a MooseX::Meta::Parameter or coercible into one"
+    croak "Parameter must be a MooseX::Meta::Parameter or coercible into one"
       unless blessed $parameter && $parameter->isa ('MooseX::Meta::Parameter');
 
     push @{$self->{'@!parameter_map'}},$parameter;
@@ -47,8 +48,15 @@ sub validate {
     }
   };
 
-  die "Parameter $pos: $@"
-    if $@;
+  if ($@) {
+    if (blessed $@ && $@->isa ('MooseX::Method::Exception')) {
+      $@->error ("Parameter $pos: " . $@->error);
+
+      $@->rethrow;
+    } else {
+      die $@;
+    }
+  }
 
   return @args;
 }
@@ -63,6 +71,8 @@ sub export {
 
   return $export;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;
 

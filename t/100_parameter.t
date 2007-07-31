@@ -6,7 +6,7 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 16;
+plan tests => 24;
 
 # basic
 
@@ -30,14 +30,46 @@ plan tests => 16;
 #  is ($parameter->validate (42),42);
 }
 
-# type
+# type constraint
 
 {
   my $parameter = MooseX::Meta::Parameter->new (isa => 'Int');
 
   is ($parameter->validate (42),42);
 
-  throws_ok { $parameter->validate ('Foo') } qr/Wrong type/;
+  throws_ok { $parameter->validate ('Foo') } qr/Argument isn't/;
+}
+
+# tpye constraint - anonymous subtypes
+
+{
+  my $parameter = MooseX::Meta::Parameter->new (isa => subtype ('Int',where { $_ < 5 }));
+
+  throws_ok { $parameter->validate (42) } qr/Argument isn't/;
+}
+
+throws_ok { MooseX::Meta::Parameter->new (isa => bless ({},'Foo')) } qr/You cannot specify an object as type/;
+
+# type constraint - classes
+
+{
+  my $parameter = MooseX::Meta::Parameter->new (isa => 'Foo');
+
+  throws_ok { $parameter->validate (42) } qr/Argument isn't/;
+
+  ok (ref $parameter->validate (bless ({},'Foo')) eq 'Foo');
+}
+
+# type constraint - unions
+
+{
+  my $parameter = MooseX::Meta::Parameter->new (isa => 'Int | ArrayRef');
+
+  throws_ok { $parameter->validate ('Foo') } qr/Argument isn't/;
+
+  is ($parameter->validate (42),42);
+
+  is_deeply ($parameter->validate ([42]),[42]);
 }
 
 # default value
@@ -66,11 +98,9 @@ coerce 'SmallInt'
   => from 'Int'
     => via { 5 };
 
-{
-  my $parameter = MooseX::Meta::Parameter->new (isa => 'Int',coerce => 1);
+throws_ok { MooseX::Meta::Parameter->new (coerce => 1) } qr/does not support this/;
 
-  throws_ok { $parameter->validate ('Foo') } qr/does not support this/;
-}
+throws_ok { MooseX::Meta::Parameter->new (isa => 'Int',coerce => 1) } qr/does not support this/;
     
 {
   my $parameter = MooseX::Meta::Parameter->new (isa => 'SmallInt',coerce => 1);

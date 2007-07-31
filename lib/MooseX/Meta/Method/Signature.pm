@@ -17,6 +17,20 @@ sub wrap_with_signature {
   return $self;
 }
 
+sub signature {
+  my ($self) = @_;
+
+  return $self->{'$!signature'};
+}
+
+sub has_signature {
+  my ($self) = @_;
+
+  return (defined $self->{'$!signature'} ? 1 : 0);
+}
+
+__PACKAGE__->meta->make_immutable;
+
 1;
 
 __END__
@@ -51,10 +65,30 @@ and methods to support signatures.
 
 =head1 METHODS
 
-=head2 wrap_with_signature
+=over 4
+
+=item B<wrap_with_signature>
 
 Similar to the wrap method from L<Moose::Meta::Method> but lets you
 specify a signature for your coderef.
+
+=item B<signature>
+
+Returns the signature if any.
+
+=item B<has_signature>
+
+Returns true or false depending on if a signature is present.
+
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Moose::Meta::Method>
+
+=back
 
 =head1 BUGS
 

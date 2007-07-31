@@ -3,13 +3,49 @@ package MooseX::Meta::Parameter;
 use Moose;
 
 use Moose::Util::TypeConstraints;
+use MooseX::Method::Exception;
+use Scalar::Util qw/blessed/;
 
-has metaclass => (isa => 'Str');
-has isa       => (isa => 'Str');
-has does      => (isa => 'Str');
-has required  => (isa => 'Bool');
-has default   => (isa => 'Defined');
-has coerce    => (isa => 'Bool');
+has isa             => (isa => 'Str | Object');
+has does            => (isa => 'Str');
+has required        => (isa => 'Bool');
+has default         => (isa => 'Defined');
+has coerce          => (isa => 'Bool');
+has type_constraint => (isa => 'Moose::Meta::TypeConstraint');
+
+sub BUILD {
+  my ($self) = @_;
+
+  if (defined $self->{isa}) {
+    if (blessed ($self->{isa})) {
+      if ($self->{isa}->isa ('Moose::Meta::TypeConstraint')) {
+        $self->{type_constraint} = $self->{isa};
+      } else {
+        MooseX::Method::Exception->throw ("You cannot specify an object as type if it's not a type constraint");
+      }
+    } else {
+      if ($self->{isa} =~ /\|/) {
+        my @type_constraints = split /\s*\|\s*/,$self->{isa};
+
+        $self->{type_constraint} = Moose::Util::TypeConstraints::create_type_constraint_union (@type_constraints);
+      } else {
+        my $constraint = find_type_constraint ($self->{isa});     
+          
+        $constraint = subtype ('Object',where { $_->isa ($self->{isa}) })
+          unless defined $constraint;
+
+        $self->{type_constraint} = $constraint;
+      }
+    }
+  }
+
+  if ($self->{coerce}) {
+    MooseX::Method::Exception->throw ("You cannot set coerce if type does not support this")
+      unless defined $self->{type_constraint} && $self->{type_constraint}->has_coercion;
+  }
+
+  return;
+}
 
 sub validate {
   my ($self,$value) = @_;
@@ -27,33 +63,30 @@ sub validate {
   }
 
   if ($provided) {
-    if (defined $self->{isa}) {
-      my $type = find_type_constraint ($self->{isa});
+    if (defined $self->{type_constraint}) {
+      my $constraint = $self->{type_constraint};
 
-      unless ($type->check ($value)) {
+      unless ($constraint->check ($value)) {
         if ($self->{coerce}) {
-          die "Wants to coerce but type $self->{isa} does not support this\n"
-            unless $type->has_coercion;
+          my $return = $constraint->coerce ($value);
 
-          my $return = $type->coerce ($value);
-
-          die "Wrong type (got '$return' which isn't a '$self->{isa}') and couldn't coerce\n"
-            unless $type->check ($return);
+          MooseX::Method::Exception->throw ("Argument isn't ($self->{isa}) and couldn't coerce")
+            unless $constraint->check ($return);
 
           $value = $return;
         } else {
-          die "Wrong type (got '$value' which isn't a '$self->{isa}')\n";
+          MooseX::Method::Exception->throw ("Argument isn't ($self->{isa})");
         }
       }
     }
 
     if (defined $self->{does}) {
       unless (blessed $value && $value->can ('does') && $value->does ($self->{does})) {
-        die "Does not do '$self->{does}'\n";
+        MooseX::Method::Exception->throw ("Does not do ($self->{does})");
       }
     }
   } elsif ($self->{required}) {
-    die "Must be specified\n";
+    MooseX::Method::Exception->throw ("Must be specified");
   }
 
   return $value;
@@ -70,6 +103,8 @@ sub export {
 
   return $export;
 }
+
+# __PACKAGE__->meta->make_immutable;
 
 1;
 
