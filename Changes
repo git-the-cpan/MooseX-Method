@@ -1,3 +1,37 @@
+0.40 <date>
+    - Preliminary support for compiled signatures that
+      will in many cases yield a *significant* performance
+      improvement. See the documentation for more
+      information.
+    - Requirements for various prerequisites lowered. Thanks
+      to Max Kanat-Alexander for testing.
+
+    * MooseX::Method
+      - Declaring methods without coderefs inside roles
+        will now make this role require a fully declared
+        method in the class the role is merged into.
+        When stevan gets around to adding the proper hooks,
+        it will also be possible to specify required
+        signatures.
+      - You can now do 'no MooseX::Method' to unimport the
+        symbols imported by MooseX::Method.
+
+    * MooseX::Meta::(Parameter|Signature)
+      - These are now roles, but think of them like abstract
+        classes. They specify the API for implementing
+        parameters and signatures. The old parameter class
+        has been renamed to...
+
+    * MooseX::Meta::Parameter::Moose
+      - The old MooseX::Meta::Parameter.
+
+    * MooseX::Meta::(Parameter|Signature)::Compiled
+      - Roles for the compiling API.
+
+    - Pass package and method names to wrap(), per changes to Class::MOP (gphat)
+
+    - And probably lotsa other stuff.
+
 0.39 Wed. August 1, 2007
     * MooseX::Meta::Parameter
       - Moved some checks from runtime to compiletime,

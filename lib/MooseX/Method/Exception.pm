@@ -6,6 +6,10 @@ use overload '""' => \&stringify;
 
 has error => (is => 'rw',isa => 'Str',required => 1);
 
+our $VERSION = '0.01';
+
+our $AUTHORITY = 'cpan:BERLE';
+
 sub throw {
   my ($class,$error) = @_;
 

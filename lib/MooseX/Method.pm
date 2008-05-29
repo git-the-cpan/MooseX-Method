@@ -2,131 +2,213 @@ package MooseX::Method;
 
 use Moose;
 
+use B qw/svref_2object/;
 use Carp qw/croak/;
 use Class::MOP;
-use Exporter;
 use Moose::Meta::Class;
+use Moose::Util qw/does_role/;
 use MooseX::Meta::Method::Signature;
+use MooseX::Meta::Method::Signature::Compiled;
 use MooseX::Meta::Signature::Named;
+use MooseX::Meta::Signature::Named::Compiled;
 use MooseX::Meta::Signature::Positional;
+use MooseX::Meta::Signature::Positional::Compiled;
 use MooseX::Meta::Signature::Combined;
-use Scalar::Util qw/blessed/;
+use MooseX::Meta::Signature::Combined::Compiled;
+use MooseX::Method::Exception;
+use Sub::Exporter;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.39';
+our $VERSION = '0.40';
 
-our @EXPORT = qw/method attr default_attr named positional combined semi/;
+our $AUTHORITY = 'cpan:BERLE';
+
+my %exports = (
+  method       => \&_method_generator,
+  named        => \&_named_generator,
+  positional   => \&_positional_generator,
+  semi         => \&_combined_generator,
+  combined     => \&_combined_generator,
+  attr         => \&_attr_generator,
+  default_attr => \&_default_attr_generator,
+);
+
+my $exporter = Sub::Exporter::build_exporter({
+    exports => \%exports,
+    groups  => {
+      default  => [':all' => { compiled => 0 }],
+      compiled => [':all' => { compiled => 1 }],
+    }
+  });
 
 sub import {
   my $class = caller;
 
+  return if $class eq 'main';
+
   Moose::Meta::Class->initialize ($class)
     unless Class::MOP::does_metaclass_exist ($class);
 
-  goto &Exporter::import;
+  goto $exporter;
 }
 
-sub method {
-  my $name = shift;
-
-  confess "You must supply a method name"
-    unless $name && ! ref $name;
-
+sub unimport {
   my $class = caller;
 
-  my ($signature,$coderef,$method);
+  foreach my $name (keys %exports) {
+    if (defined &{$class . '::' . $name}) {
+      my $keyword = \&{$class . '::' . $name};
 
-  my $local_attributes = {};
+      my $pkg_name = eval { svref_2object($keyword)->GV->STASH->NAME };
 
-  for (@_) {
-    if (blessed $_ && $_->isa ('MooseX::Meta::Signature')) {
-      $signature = $_;
-    } elsif (ref $_ eq 'CODE') {
-      $coderef = $_;
-    } elsif (ref $_ eq 'HASH') {
-      $local_attributes = $_;
-    } else {
-      confess "I have no idea what to do with '$_'";
+      next if $@;
+
+      next if $pkg_name ne 'MooseX::Method';
+
+      no strict qw/refs/;
+
+      delete ${$class . '::'}{$name};
     }
   }
+}
 
-  confess "You didn't provide a coderef"
-    unless defined $coderef;
+sub _positional_generator {
+  my $signature_metaclass;
 
-  my $attributes;
-
-  # Have a method that allows default attribute settings for methods.
-  if ($class->can ('_default_method_attributes')) {
-    $attributes = $class->_default_method_attributes ($name);
-
-    confess "_default_method_attributes exists but does not return a hashref"
-      unless ref $attributes eq 'HASH';
+  if ($_[2]->{compiled}) {
+    $signature_metaclass = 'MooseX::Meta::Signature::Positional::Compiled';
   } else {
-    $attributes = {};
-  }
-
-  $attributes = { %$attributes,%$local_attributes };
-
-  my $method_metaclass = $attributes->{metaclass} || 'MooseX::Meta::Method::Signature';
-
-  subname "$class\::$name", $coderef;
-
-  my $meta = Class::MOP::get_metaclass_by_name ($class);
-
-  # This is a workaround for Devel::Cover. It has the nice sideffect
-  # of making dispatch wrapping redundant though.
-  $meta->add_package_symbol ("&__real_${name}" => $coderef);
-   
-  if (defined $signature) { 
-    $method = $method_metaclass->wrap_with_signature ($signature,sub {
-        my $self = shift;
-
-        eval {
-          @_ = ($self,$signature->validate (@_));
-        };
-
-        if ($@) {
-          if (blessed $@ && $@->isa ('MooseX::Method::Exception')) {
-            croak $@->error;
-          } else {
-            die $@;
-          }
-        }
-
-        goto $coderef;
-      });
-  } else {
-    $method = $method_metaclass->wrap ($coderef);
+    $signature_metaclass = 'MooseX::Meta::Signature::Positional';
   }
   
-  $meta->add_method ($name => $method);
-
-  return $method;
+  return subname 'MooseX::Method::positional' => sub { eval { $signature_metaclass->new (@_) } || croak "$@" };
 }
 
-sub attr {
-  my (%attributes) = @_;
+sub _named_generator {
+  my $signature_metaclass;
 
-  return \%attributes;
+  if ($_[2]->{compiled}) {
+    $signature_metaclass = 'MooseX::Meta::Signature::Named::Compiled';
+  } else {
+    $signature_metaclass = 'MooseX::Meta::Signature::Named';
+  }
+
+  return subname 'MooseX::Method::named' => sub { eval { $signature_metaclass->new (@_) } || croak "$@" };
 }
 
-sub default_attr {
-  my $class = caller;
+sub _combined_generator {
+  my $signature_metaclass;
 
-  my $meta = Class::MOP::get_metaclass_by_name ($class);
+  if ($_[2]->{compiled}) {
+    $signature_metaclass = 'MooseX::Meta::Signature::Combined::Compiled';
+  } else {
+    $signature_metaclass = 'MooseX::Meta::Signature::Combined';
+  }
 
-  $meta->add_method (_default_method_attributes => sub { attr (@_) });
-
-  return;
+  return subname 'MooseX::Method::combined' => sub { eval { $signature_metaclass->new (@_) } || croak "$@" };
 }
 
-sub named { MooseX::Meta::Signature::Named->new (@_) }
+sub _attr_generator {
+  return subname 'MooseX::Method::attr' => sub { return { @_ } };
+}
 
-sub positional { MooseX::Meta::Signature::Positional->new (@_) }
+sub _default_attr_generator {
+  return subname 'MooseX::Method::default_attr' => sub {
+    my $class = caller;
 
-sub combined { MooseX::Meta::Signature::Combined->new (@_) }
+    my $meta = Class::MOP::get_metaclass_by_name ($class);
 
-*semi = \&combined;
+    $meta->add_method (_default_method_attributes => sub { return { @_ } });
+
+    return;
+  }
+}
+
+sub _method_generator {
+  my $default_method_metaclass;
+
+  if ($_[2]->{compiled}) {
+    $default_method_metaclass = 'MooseX::Meta::Method::Signature::Compiled';
+  } else {
+    $default_method_metaclass = 'MooseX::Meta::Method::Signature';
+  }
+
+  return subname 'MooseX::Method::method' => sub {
+    my $name = shift;
+
+    croak "You must supply a method name"
+      unless defined $name && ! ref $name;
+
+    my $class = caller;
+
+    my ($signature,$coderef,$method,$meta);
+
+    my $local_attributes = {};
+
+    if ($class->can ('meta')) {
+      $meta = $class->meta;
+    } else {
+      $meta = Class::MOP::get_metaclass_by_name ($class);
+    }
+
+    for (@_) {
+      if (does_role ($_,'MooseX::Meta::Signature')) {
+        $signature = $_;
+      } elsif (ref $_ eq 'CODE') {
+        $coderef = $_;
+      } elsif (ref $_ eq 'HASH') {
+        $local_attributes = $_;
+      } else {
+        croak "I have no idea what to do with ($_)";
+      }
+    }
+
+    unless (defined $coderef) {
+      if ($meta->isa ('Moose::Meta::Role')) {
+        $meta->add_required_methods ($name);
+
+        return;
+      }
+       
+      croak "You didn't provide a coderef";
+    }
+
+    my $attributes;
+
+    # Have a method that allows default attribute settings for methods.
+    if ($class->can ('_default_method_attributes')) {
+      $attributes = $class->_default_method_attributes ($name);
+
+      croak "_default_method_attributes exists but does not return a hashref"
+        unless ref $attributes eq 'HASH';
+    } else {
+      $attributes = {};
+    }
+
+    $attributes = { %$attributes,%$local_attributes };
+
+    my $method_metaclass = $attributes->{metaclass} || $default_method_metaclass;
+
+    subname "$class\::$name", $coderef;
+
+    if (defined $signature) {
+      $method = $method_metaclass->wrap_with_signature (
+          $signature,$coderef,$class,$name
+      );
+    } else {
+      $method = $method_metaclass->wrap ($coderef,
+          package_name => $class, name => $name
+      );
+    }
+
+    # For Devel::Cover  
+    $meta->add_package_symbol ("&__real_${name}" => $coderef);
+
+    $meta->add_method ($name => $method);
+
+    return $method;
+  }
+}
 
 1;
 
@@ -142,7 +224,7 @@ MooseX::Method - Method declaration with type checking
 
   package Foo;
 
-  use MooseX::Method;
+  use MooseX::Method; # Or use MooseX::Method qw/:compiled/
 
   method hello => named (
     who => { isa => 'Str',required => 1 },
@@ -174,6 +256,8 @@ MooseX::Method - Method declaration with type checking
     }
   };
 
+  no MooseX::Method; # Remove the MooseX::Method keywords.
+
   Foo->hello (who => 'world',age => 42); # This works.
 
   Foo->morning ('Jens'); # This too.
@@ -190,10 +274,9 @@ MooseX::Method - Method declaration with type checking
 
 =head2 The problem
 
-This module is an attempt to solve a problem I've often encountered
-but never really found any good solution for, namely validation of
-method parameters. How many times haven't we all found ourselves
-writing code like this:
+This module is an attempt to solve a problem I've often encountered but
+never really found any good solution for: validation of method
+parameters. How many times have we all ourselves writing code like this:
 
   sub foo {
     my ($self,$args) = @_;
@@ -202,18 +285,17 @@ writing code like this:
       unless (defined $arg->{bar} && $arg->{bar} =~ m/bar/);
   }
 
-Manual parameter validation is a tedious and repetive process and
-maintaining it consistently throughout your code can be downright
-hard sometimes. Modules like L<Params::Validate> makes the job a
-bit easier but it doesn't do much for elegance and it still
-requires more weird code than what should strictly speaking be
-neccesary.
+Manual parameter validation is a tedious, repetive process and
+maintaining it consistently throughout your code can be downright hard
+sometimes. Modules like L<Params::Validate> makes the job a bit easier,
+but it doesn't do much for elegance and it still requires more weird
+code than what should, strictly speaking, be neccesary.
 
 =head2 The solution
 
-MooseX::Method to the rescue. It lets you declare what parameters
-people should be passing to your method using Moose-style
-declaration and Moose types. It doesn't get much Moosier than this.
+MooseX::Method to the rescue! It lets you declare which parameters
+people should pass to your method using Moose-style declaration and
+Moose types. It doesn't get much Moosier than this.
 
 =head1 DECLARING METHODS
 
@@ -221,29 +303,28 @@ declaration and Moose types. It doesn't get much Moosier than this.
 
   method $name => named () => sub {};
 
-The exported function method installs a method into the class from
-which it is called from. The first parameter it takes is the name of
-the method. The rest of the parameters needs not be in any particular
-order, though it's probably best for the sake of readability to keep
-the subroutine at the end.
+The exported function C<method> installs a method into the class which
+call it. The first parameter it takes is the name of the method. The
+rest of the parameters need not be in any particular order, though it's
+probably best for the sake of readability to keep the subroutine at the
+end.
 
-There are two different elements you need to be aware of, the
-signature and the parameter. A signature is (For the purpose of this
+There are two different elements you need to be aware of: the
+signature and the parameter. A signature is (for the purpose of this
 document) a collection of parameters. A parameter is a collection of
 requirements that an individual argument needs to satisfy. No matter
 what kind of signature you use, these properties are declared the
 same way, although specific properties may behave differently
 depending on the particular signature type.
 
-As of version 0.31 of this module, signatures are optional in method
-declarations. If one is not provided, arguments will be passed
-directly to the coderef.
+As of version 0.31, signatures are optional in method declarations. If
+one is not provided, arguments will be passed directly to the coderef.
 
 =head2 Signatures
 
-MooseX::Method comes with three different signature types, and you
-will once the internal API becomes stable be able to implement your
-own signatures easily.
+MooseX::Method ships with three different signature types. Once the
+internal API stabilizes, you'll be able to implement your own signatures
+easily.
 
 The three different signatures types are shown below:
 
@@ -272,20 +353,20 @@ The three different signatures types are shown below:
 
 The named signature type will let you specify names for the individual
 parameters. The example above declares two parameters, foo and bar,
-of which foo is mandatory. Read more about parameter properties below.
+where foo is mandatory. Read more about parameter properties below.
 
-The positional signature type lets you, unsurprisingly, declare
-positional unnamed parameters. If a parameter has the 'required'
-property set in a positional signature, a parameter is counted as
-provided if the argument list is equal or larger to its position. One
-thing about this is that it leads to a situation where a parameter
-is implicitly required if a later parameter is explicitly required.
-Even so, you should always mark all required parameters explicitly.
+The positional signature type lets you, surprisingly, declare positional
+unnamed parameters. If a parameter has the 'required' property set in a
+positional signature, a parameter is counted as provided if the argument
+list is equal or larger to its position. One thing about this is that it
+leads to a situation where a parameter is implicitly required if a later
+parameter is explicitly required.  Even so, you should always mark all
+required parameters explicitly.
 
 The combined signature type combines the two signature types above. You
-may declare both named and positional parameters. Parameters do not
-need to come in any particular order (Although positional parameters
-must be ordered right relative to each other like with the positional
+may declare both named and positional parameters. Parameters do not need
+to come in any particular order (although positional parameters must be
+ordered correctly relative to each other like with the positional
 signature) so it's possible to declare a combined signature like this:
 
   combined (
@@ -296,11 +377,10 @@ signature) so it's possible to declare a combined signature like this:
   )
 
 This is however not recommended for the sake of readability. Put
-positional arguments first, then named arguments last, which
-is the same order combined signature methods receive them in. Be also
-aware that all positional parameters are always required in a combined
-signature. Named parameters may be both optional or required
-however.
+positional arguments first, then named arguments last, which is the same
+order combined signature methods receive them. Also be aware that all
+positional parameters are always required in a combined signature. Named
+parameters may be both optional or required however.
 
 =head2 Parameters
 
@@ -360,15 +440,14 @@ function default_attr like this:
     overridden_attribute => $value,
   ) => sub {};
 
-If you discover any other attributes than those listed here while
-diving through the code, they're not guaranteed to be there at the
-next release.
+If you discover any attributes other than those listed here while diving
+through the code, they're not guaranteed to be in the next release.
 
 =over 4
 
 =item B<metaclass>
 
-Sets the metaclass to use for when creating the method.
+Sets the metaclass to use when creating the method.
 
 =back
 
@@ -406,23 +485,52 @@ A function for setting the default attributes on methods of a class.
 
 =back
 
+=head1 ROLES
+
+Inside Moose roles, MooseX::Method can be used as sugar for declaring
+a required method. This is done by not attaching a coderef to method
+declaration, like this...
+
+  method foo => ();
+
+Which will make MooseX::Method add the method to the list of required
+methods instead of making it a real method in the role. Signatures in
+such declarations are at the moment not used, but I'm working with
+stevan on making it possible to require a specific signature.
+
+=head1 COMPILATION SUPPORT
+
+As of 0.40, MooseX::Method has experimental support for compiling the
+signatures into Perl code and inlining it to achieve a significant
+performance improvement. This behaviour is not enabled by default since
+it is not yet tested extensively, and may or may not be severely
+bugged -- but if you dare, you can enable inline compilation with
+
+  use MooseX::Method qw/:compiled/;
+
+And all methods within this class will take adventage of the new
+experimental feature. This does not affect classes that do not
+explicitly enable it; the effect is local. If you try this and
+get an error using it, please make a small test case and send it
+to me.
+
 =head1 FUTURE
 
 I'm considering using a param() function to declare individual
-parameters, but I feel this might have a bit too high risk of
-clashing with existing functions of other modules. Your thoughts on
-the subject is welcome.
+parameters, but I feel this might have too high a risk of clashing with
+existing functions of other modules. Your thoughts on the subject are
+welcome.
 
 =head1 CAVEATS
 
-Methods are added to the class at runtime, which obviously means
-they won't be available to play with at compile-time. Moose won't
-mind this but a few other modules probably will. A workaround for
-this that sometimes work is to encapsulate the method declarations
-in a BEGIN block.
+Methods are added to the class at runtime, which obviously means they
+won't be available to play with at compile-time. Moose won't mind this
+but a few other modules probably will. A workaround for this that
+sometimes works is to encapsulate the method declarations in a BEGIN
+block.
 
 There's also a problem related to how roles are loaded in Moose. Since
-both MooseX::Method methods and Moose roles are loaded runtime, any
+both MooseX::Method methods and Moose roles are loaded at runtime, any
 methods a role requires in some way must be declared before the 'with'
 statement. This affects things like 'before' and 'after'.
 
@@ -432,6 +540,10 @@ statement. This affects things like 'before' and 'after'.
 
 =item Stevan Little for making Moose and luring me into the
 world of metafoo.
+
+=item Max Kanat-Alexander for testing.
+
+=item Christopher Nehren for documentation review.
 
 =back
 

@@ -2,19 +2,50 @@ package MooseX::Meta::Method::Signature;
 
 use Moose;
 
+use Carp;
+use Moose::Util qw/does_role/;
+use MooseX::Method::Exception;
+
 extends qw/Moose::Meta::Method/;
 
+our $VERSION = '0.01';
+
+our $AUTHORITY = 'cpan:BERLE';
+
 sub wrap_with_signature {
-  my ($class,$signature,$coderef) = @_;
+  my ($class,$signature,$coderef,$classname,$subname) = @_;
 
-  confess "Signature is not a MooseX::Meta::Signature"
-    unless blessed $signature && $signature->isa ('MooseX::Meta::Signature');
+  MooseX::Method::Exception->throw ('No valid signature provided')
+    unless does_role ($signature,'MooseX::Meta::Signature');
 
-  my $self = $class->wrap ($coderef);
+  MooseX::Method::Exception->throw ('No valid coderef provided')
+    unless ref $coderef;
+
+  my $self = $class->wrap (
+      $class->_make_validating_coderef ($signature,$coderef),
+      package_name => $classname, name => $subname
+  );
 
   $self->{'$!signature'} = $signature;
 
   return $self;
+}
+
+sub _make_validating_coderef {
+  my ($class,$signature,$coderef) = @_;
+
+  return sub {
+    my $self = shift;
+
+    eval {
+      @_ = ($self,$signature->validate (@_));
+    };
+
+    Carp::croak ("$@")
+      if $@;
+
+    goto $coderef;
+  };
 }
 
 sub signature {

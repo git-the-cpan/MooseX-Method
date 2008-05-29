@@ -1,32 +1,60 @@
-package MooseX::Meta::Signature;
+package MooseX::Method::Constant;
 
-use Moose::Role;
-
-requires qw/validate/;
+use Moose;
 
 our $VERSION = '0.01';
 
 our $AUTHORITY = 'cpan:BERLE';
 
+our $count;
+
+sub make {
+  my ($class,$value) = @_;
+
+  $count++;
+
+  no strict qw/refs/;
+
+  *{"$class\::constant_$count"} = sub () { $value };
+
+  return "$class\::constant_$count()";
+}
+
 1;
 
 __END__
 
-=pod
-
 =head1 NAME
 
-MooseX::Meta::Signature - Signature API role
+MooseX::Method::Constant - Constant generator for MooseX::Method
 
 =head1 WARNING
 
 This API is unstable, it may change at any time. This should not
 affect ordinary L<MooseX::Method> usage.
 
+=head1 SYNOPSIS
+
+  use MooseX::Method::Constant;
+
+  my $constant = MooseX::Method::Constant->make;
+
+  print eval "$constant";
+
 =head1 DESCRIPTION
 
-Ensures that the class importing the role conforms to the
-MooseX::Method signature API.
+Primarily used within the inlining compiler suite of MooseX::Method,
+and there are no guarantees this won't be gone tomorrow.
+
+=head1 METHODS
+
+=over 4
+
+=item make
+
+Makes a constant.
+
+=back
 
 =head1 BUGS
 

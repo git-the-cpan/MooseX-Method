@@ -5,13 +5,21 @@ use Moose;
 use MooseX::Meta::Signature::Named;
 use MooseX::Meta::Signature::Positional;
 
-has named_signature => (is => 'rw',isa => 'MooseX::Meta::Signature::Named');
+has named_signature => (is => 'ro',isa => 'MooseX::Meta::Signature::Named');
 
-has positional_signature => (is => 'rw',isa => 'MooseX::Meta::Signature::Positional');
+has positional_signature => (is => 'ro',isa => 'MooseX::Meta::Signature::Positional');
 
-has positional_signature_size => (is => 'rw',isa => 'Int');
+has positional_signature_size => (is => 'ro',isa => 'Int');
 
-extends qw/MooseX::Meta::Signature/;
+with qw/MooseX::Meta::Signature/;
+
+our $VERSION = '0.01';
+
+our $AUTHORITY = 'cpan:BERLE';
+
+sub _positional_metaclass { 'MooseX::Meta::Signature::Positional' }
+
+sub _named_metaclass { 'MooseX::Meta::Signature::Named' }
 
 sub new {
   my ($class,@parameters) = @_;
@@ -24,7 +32,8 @@ sub new {
 
   while (my $param = shift @parameters) {
     if (ref $param) {
-      $param->{required} = 1;
+      $param->{required} = 1
+        if ref $param eq 'HASH';
 
       push @positional_params,$param;
     } else {
@@ -32,14 +41,39 @@ sub new {
     }
   }
 
-  $self->named_signature (MooseX::Meta::Signature::Named->new (%named_params));
+  $self->{named_signature} = $self->_named_metaclass->new (%named_params);
 
-  $self->positional_signature (MooseX::Meta::Signature::Positional->new (@positional_params));
+  $self->{positional_signature} = $self->_positional_metaclass->new (@positional_params);
 
-  $self->positional_signature_size (scalar @positional_params);
+  $self->{positional_signature_size} = scalar @positional_params;
 
   return $self;
 }
+
+sub get_named_parameter_names {
+    my $self = shift;
+
+    return $self->{named_signature}->get_parameter_names();
+}
+
+sub get_named_parameter {
+    my ($self, $name) = @_;
+
+    return $self->{named_signature}->get_parameter($name);
+}
+
+sub get_positional_parameter_count {
+    my $self = shift;
+
+    return $self->{positional_signature}->get_parameter_count();
+}
+
+sub get_positional_parameter {
+    my ($self, $idx) = @_;
+
+    return $self->{positional_signature}->get_parameter($idx);
+}
+
 
 sub validate {
   my ($self,@args) = @_;
@@ -51,18 +85,6 @@ sub validate {
   return
     $self->{positional_signature}->validate (@positional_args),
     $self->{named_signature}->validate (%named_args);
-}
-
-sub export {
-  my ($self) = @_;
-
-  my $export = [];
-
-  push @$export,$self->{positional_signature}->export;
-
-  push @$export,$self->{named_signature}->export;
-
-  return $export;
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -101,7 +123,7 @@ affect ordinary L<MooseX::Method> usage.
 
 =over 4
 
-=item B<validate>
+=item validate
 
 Validates the arguments against the signature. The first arguments
 must be the positional ones. The named arguments must be in the
@@ -110,9 +132,17 @@ hashrefs. Returns a list of the validated positional arguments
 and a hashref of the validated named arguments or throws an
 exception on validation error.
 
-=item B<export>
+=item named_signature
 
-Exports a data structure representing the signature.
+Returns the named signature.
+
+=item positional_signature
+
+Returns the positional signature.
+
+=item positional_signature_size
+
+Returns the length of the positional signature.
 
 =back
 

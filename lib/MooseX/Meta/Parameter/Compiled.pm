@@ -1,8 +1,10 @@
-package MooseX::Meta::Signature;
+package MooseX::Meta::Parameter::Compiled;
 
 use Moose::Role;
 
-requires qw/validate/;
+with qw/MooseX::Meta::Parameter/;
+
+requires qw/as_perl compile/;
 
 our $VERSION = '0.01';
 
@@ -16,7 +18,7 @@ __END__
 
 =head1 NAME
 
-MooseX::Meta::Signature - Signature API role
+MooseX::Meta::Parameter::Compiled - Compiled parameter API role
 
 =head1 WARNING
 
@@ -26,7 +28,7 @@ affect ordinary L<MooseX::Method> usage.
 =head1 DESCRIPTION
 
 Ensures that the class importing the role conforms to the
-MooseX::Method signature API.
+MooseX::Method compiled parameter API.
 
 =head1 BUGS
 

@@ -6,16 +6,14 @@ use Test::Exception;
 use strict;
 use warnings;
 
-plan tests => 7;
+plan tests => 6;
 
-throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (0,sub {}) } qr/Signature is not a/;
-
-throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (bless ({},'Foo'),sub {}) } qr/Signature is not a/;
+throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (0,sub {}) } qr/No valid signature provided/;
 
 {
   my $signature = MooseX::Meta::Signature::Named->new;
 
-  my $method = MooseX::Meta::Method::Signature->wrap_with_signature ($signature,sub {});
+  my $method = MooseX::Meta::Method::Signature->wrap_with_signature ($signature,sub {}, 'Foo', 'bar');
 
   isa_ok ($method,'MooseX::Meta::Method::Signature');
 
@@ -27,7 +25,7 @@ throws_ok { MooseX::Meta::Method::Signature->wrap_with_signature (bless ({},'Foo
 }
 
 {
-  my $method = MooseX::Meta::Method::Signature->wrap (sub {});
+  my $method = MooseX::Meta::Method::Signature->wrap (sub {}, package_name => 'Foo', name => 'bar');
 
   ok (! $method->has_signature);
 }

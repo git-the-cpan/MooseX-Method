@@ -1,12 +1,10 @@
-use Moose::Util::TypeConstraints;
-use MooseX::Method;
 use Test::More;
 use Test::Exception;
 
 use strict;
 use warnings;
 
-plan tests => 20;
+plan tests => 23;
 
 {
   package XXX;
@@ -47,15 +45,31 @@ plan tests => 20;
   lives_ok { method foo => sub {} };
 }
 
-is_deeply (attr (foo => 1),{ foo => 1 });
+{
+  package TestX::Exports;
 
-isa_ok (positional,'MooseX::Meta::Signature::Positional');
+  use MooseX::Method;
+  use Test::More;
+  use Test::Exception;
 
-isa_ok (named,'MooseX::Meta::Signature::Named');
+  is_deeply (attr (foo => 1),{ foo => 1 });
 
-isa_ok (combined,'MooseX::Meta::Signature::Combined');
+  isa_ok (positional,'MooseX::Meta::Signature::Positional');
 
-isa_ok (semi,'MooseX::Meta::Signature::Combined');
+  throws_ok { positional (0) } qr/at t\/400_method\.t/;
+
+  isa_ok (named,'MooseX::Meta::Signature::Named');
+
+  throws_ok { named (0 => 0) } qr/at t\/400_method\.t/;
+
+  isa_ok (combined,'MooseX::Meta::Signature::Combined');
+
+  throws_ok { combined ({ coerce => 1 }) } qr/at t\/400_method\.t/;
+
+  isa_ok (semi,'MooseX::Meta::Signature::Combined');
+
+  throws_ok { semi ({ coerce => 1 }) } qr/at t\/400_method\.t/;
+}
 
 {
   package Foo::Method;
@@ -103,7 +117,7 @@ isa_ok (semi,'MooseX::Meta::Signature::Combined');
     { required => 1 },
   ) => sub {};
 
-  throws_ok { Foo->test_exception_mxmethod } qr/200_method/;
+  throws_ok { Foo->test_exception_mxmethod } qr/400_method/;
 
   method test_exception_user_plain => positional (
     { isa => subtype ('Int',where { die 'Foo' }) },
@@ -111,12 +125,6 @@ isa_ok (semi,'MooseX::Meta::Signature::Combined');
 
   throws_ok { Foo->test_exception_user_plain (42) } qr/Foo/;
 
-  method test_exception_user_object => positional (
-    { isa => subtype ('Int',where { die bless ({},'Foo') }) },
-  ) => sub {};
-
-  eval { Foo->test_exception_user_object (42) };
-
-  is (ref $@,'Foo');
+  no MooseX::Method;
 }
 

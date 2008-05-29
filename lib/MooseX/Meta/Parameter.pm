@@ -1,110 +1,12 @@
 package MooseX::Meta::Parameter;
 
-use Moose;
+use Moose::Role;
 
-use Moose::Util::TypeConstraints;
-use MooseX::Method::Exception;
-use Scalar::Util qw/blessed/;
+requires qw/validate/;
 
-has isa             => (isa => 'Str | Object');
-has does            => (isa => 'Str');
-has required        => (isa => 'Bool');
-has default         => (isa => 'Defined');
-has coerce          => (isa => 'Bool');
-has type_constraint => (isa => 'Moose::Meta::TypeConstraint');
+our $VERSION = '0.01';
 
-sub BUILD {
-  my ($self) = @_;
-
-  if (defined $self->{isa}) {
-    if (blessed ($self->{isa})) {
-      if ($self->{isa}->isa ('Moose::Meta::TypeConstraint')) {
-        $self->{type_constraint} = $self->{isa};
-      } else {
-        MooseX::Method::Exception->throw ("You cannot specify an object as type if it's not a type constraint");
-      }
-    } else {
-      if ($self->{isa} =~ /\|/) {
-        my @type_constraints = split /\s*\|\s*/,$self->{isa};
-
-        $self->{type_constraint} = Moose::Util::TypeConstraints::create_type_constraint_union (@type_constraints);
-      } else {
-        my $constraint = find_type_constraint ($self->{isa});     
-          
-        $constraint = subtype ('Object',where { $_->isa ($self->{isa}) })
-          unless defined $constraint;
-
-        $self->{type_constraint} = $constraint;
-      }
-    }
-  }
-
-  if ($self->{coerce}) {
-    MooseX::Method::Exception->throw ("You cannot set coerce if type does not support this")
-      unless defined $self->{type_constraint} && $self->{type_constraint}->has_coercion;
-  }
-
-  return;
-}
-
-sub validate {
-  my ($self,$value) = @_;
-
-  my $provided = ($#_ > 0 ? 1 : 0);
-
-  if (! $provided && defined $self->{default}) {
-    if (ref $self->{default} eq 'CODE') {
-      $value = $self->{default}->();
-    } else {
-      $value = $self->{default};
-    }
-
-    $provided = 1;
-  }
-
-  if ($provided) {
-    if (defined $self->{type_constraint}) {
-      my $constraint = $self->{type_constraint};
-
-      unless ($constraint->check ($value)) {
-        if ($self->{coerce}) {
-          my $return = $constraint->coerce ($value);
-
-          MooseX::Method::Exception->throw ("Argument isn't ($self->{isa}) and couldn't coerce")
-            unless $constraint->check ($return);
-
-          $value = $return;
-        } else {
-          MooseX::Method::Exception->throw ("Argument isn't ($self->{isa})");
-        }
-      }
-    }
-
-    if (defined $self->{does}) {
-      unless (blessed $value && $value->can ('does') && $value->does ($self->{does})) {
-        MooseX::Method::Exception->throw ("Does not do ($self->{does})");
-      }
-    }
-  } elsif ($self->{required}) {
-    MooseX::Method::Exception->throw ("Must be specified");
-  }
-
-  return $value;
-}
-
-sub export {
-  my ($self) = @_;
-
-  my $export = {};
-  
-  for (keys %$self) {
-    $export->{$_} = $self->{$_} if defined $self->{$_};
-  }
-
-  return $export;
-}
-
-# __PACKAGE__->meta->make_immutable;
+our $AUTHORITY = 'cpan:BERLE';
 
 1;
 
@@ -114,45 +16,21 @@ __END__
 
 =head1 NAME
 
-MooseX::Meta::Parameter - Parameter metaclass
+MooseX::Meta::Parameter - Parameter API role
 
 =head1 WARNING
 
 This API is unstable, it may change at any time. This should not
 affect ordinary L<MooseX::Method> usage.
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
-  use MooseX::Meta::Parameter;
-
-  my $parameter = MooseX::Meta::Parameter->new (isa => 'Int');
-
-  my $result;
-
-  eval {
-    $result = $parameter->validate ("foo");
-  };
-
-  print Dumper($parameter->export);
-
-=head1 METHODS
-
-=over 4
-
-=item B<validate>
-
-Takes an argument, validates it, and returns the argument or possibly
-a coerced version of it. Exceptions are thrown on validation failure.
-
-=item B<export>
-
-Exports a data structure representing the parameter.
-
-=back
+Ensures that the class importing the role conforms to the
+MooseX::Method parameter API.
 
 =head1 BUGS
 
-Most software has bugs. This module probably isn't an exception. 
+Most software has bugs. This module probably isn't an exception.
 If you find a bug please either email me, or add the bug to cpan-RT.
 
 =head1 AUTHOR
@@ -164,7 +42,7 @@ Anders Nor Berle E<lt>debolaz@gmail.comE<gt>
 Copyright 2007 by Anders Nor Berle.
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+it under the same terms as Perl itself.
 
 =cut
 

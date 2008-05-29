@@ -2,11 +2,18 @@ package MooseX::Meta::Signature::Positional;
 
 use Moose;
 
-use Carp qw/croak/;
-use MooseX::Meta::Parameter;
+use Moose::Util qw/does_role/;
+use MooseX::Meta::Parameter::Moose;
+use MooseX::Method::Exception;
 use Scalar::Util qw/blessed/;
 
-extends qw/MooseX::Meta::Signature/;
+with qw/MooseX::Meta::Signature/;
+
+our $VERSION = '0.01';
+
+our $AUTHORITY = 'cpan:BERLE';
+
+sub _parameter_metaclass { 'MooseX::Meta::Parameter::Moose' }
 
 sub new {
   my ($class,@parameters) = @_;
@@ -20,18 +27,31 @@ sub new {
       if (exists $parameter->{metaclass}) {
         $parameter = $parameter->{metaclass}->new ($parameter);
       } else {
-        $parameter = MooseX::Meta::Parameter->new ($parameter);
+        $parameter = $self->_parameter_metaclass->new ($parameter);
       }
     }
 
-    croak "Parameter must be a MooseX::Meta::Parameter or coercible into one"
-      unless blessed $parameter && $parameter->isa ('MooseX::Meta::Parameter');
+    MooseX::Method::Exception->throw ("Parameter must be a MooseX::Meta::Parameter or coercible into one")
+      unless does_role ($parameter,'MooseX::Meta::Parameter');
 
     push @{$self->{'@!parameter_map'}},$parameter;
   }
 
   return $self;
 }
+
+sub get_parameter_count {
+    my $self = shift;
+
+    return scalar(@{ $self->{'@!parameter_map'}});
+}
+
+sub get_parameter {
+    my ($self, $idx) = @_;
+
+    return $self->{'@!parameter_map'}->{$idx};
+}
+
 
 sub validate {
   my $self = shift;
@@ -59,17 +79,6 @@ sub validate {
   }
 
   return @args;
-}
-
-sub export {
-  my ($self) = @_;
-
-  my $export = [];
-
-  push @$export,$_->export
-    for @{$self->{'@!parameter_map'}};
-
-  return $export;
 }
 
 __PACKAGE__->meta->make_immutable;

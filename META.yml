@@ -1,12 +1,13 @@
 --- 
 abstract: Method declaration with type checking
-author: Anders Nor Berle <debolaz@gmail.com>
+author: 
+  - Anders Nor Berle <debolaz@gmail.com>
 build_requires: 
-  Test::Exception: 0.25
-  Test::More: 0.70
+  Test::Exception: 0.21
+  Test::More: 0.47
   Test::Pod: 1.26
 distribution_type: module
-generated_by: Module::Install version 0.67
+generated_by: Module::Install version 0.68
 license: perl
 meta-spec: 
   url: http://module-build.sourceforge.net/META-spec-v1.3.html
@@ -18,9 +19,9 @@ no_index:
     - t
 requires: 
   Carp: 0
-  Class::MOP: 0.40
-  Module::Find: 0.05
-  Moose: 0.24
-  Scalar::Util: 1.19
+  Class::MOP: 0.37
+  HTML::Template::Pro: 0.65
+  Moose: 0.22
+  Scalar::Util: 1.14
   Sub::Name: 0.02
-version: 0.39
+version: 0.40
