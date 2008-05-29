@@ -50,31 +50,6 @@ sub new {
   return $self;
 }
 
-sub get_named_parameter_names {
-    my $self = shift;
-
-    return $self->{named_signature}->get_parameter_names();
-}
-
-sub get_named_parameter {
-    my ($self, $name) = @_;
-
-    return $self->{named_signature}->get_parameter($name);
-}
-
-sub get_positional_parameter_count {
-    my $self = shift;
-
-    return $self->{positional_signature}->get_parameter_count();
-}
-
-sub get_positional_parameter {
-    my ($self, $idx) = @_;
-
-    return $self->{positional_signature}->get_parameter($idx);
-}
-
-
 sub validate {
   my ($self,@args) = @_;
 

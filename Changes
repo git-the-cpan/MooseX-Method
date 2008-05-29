@@ -1,4 +1,7 @@
-0.40 <date>
+0.41 2008-05-29
+    - Fix borked test coverage due to accidental include of methods, no
+      real change.
+0.40 2008-05-29
     - Preliminary support for compiled signatures that
       will in many cases yield a *significant* performance
       improvement. See the documentation for more

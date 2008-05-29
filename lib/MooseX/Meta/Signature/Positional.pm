@@ -40,19 +40,6 @@ sub new {
   return $self;
 }
 
-sub get_parameter_count {
-    my $self = shift;
-
-    return scalar(@{ $self->{'@!parameter_map'}});
-}
-
-sub get_parameter {
-    my ($self, $idx) = @_;
-
-    return $self->{'@!parameter_map'}->{$idx};
-}
-
-
 sub validate {
   my $self = shift;
 

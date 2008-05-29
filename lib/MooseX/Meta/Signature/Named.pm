@@ -41,18 +41,6 @@ sub new {
   return $self;
 }
 
-sub get_parameter_names {
-    my $self = shift;
-
-    return keys(%{ $self->{'%!parameter_map'} });
-}
-
-sub get_parameter {
-    my ($self, $name) = @_;
-
-    return $self->{'%!parameter_map'}->{$name};
-}
-
 sub validate {
   my $self = shift;
 
