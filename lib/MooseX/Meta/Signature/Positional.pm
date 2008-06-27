@@ -68,6 +68,17 @@ sub validate {
   return @args;
 }
 
+sub export {
+  my ($self) = @_;
+
+  my $export = [];
+
+  push @$export,$_->export
+    for @{$self->{'@!parameter_map'}};
+
+  return $export;
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;

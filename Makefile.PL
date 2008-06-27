@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use inc::Module::Install;
+use inc::Module::Install 0.75;
 
 use strict;
 use warnings;

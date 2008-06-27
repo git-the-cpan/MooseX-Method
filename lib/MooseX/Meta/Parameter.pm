@@ -8,6 +8,18 @@ our $VERSION = '0.01';
 
 our $AUTHORITY = 'cpan:BERLE';
 
+sub export {
+  my ($self) = @_;
+
+  my $export = {};
+
+  for (keys %$self) {
+    $export->{$_} = $self->{$_} if defined $self->{$_};
+  }
+
+  return $export;
+}
+
 1;
 
 __END__
@@ -17,6 +29,16 @@ __END__
 =head1 NAME
 
 MooseX::Meta::Parameter - Parameter API role
+
+=head1 METHODS
+
+=over 4
+
+=item B<export>
+
+Exports a data structure representing the parameter.
+
+=back
 
 =head1 WARNING
 

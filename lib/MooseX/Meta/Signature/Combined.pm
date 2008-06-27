@@ -98,7 +98,7 @@ affect ordinary L<MooseX::Method> usage.
 
 =over 4
 
-=item validate
+=item B<validate>
 
 Validates the arguments against the signature. The first arguments
 must be the positional ones. The named arguments must be in the
@@ -107,15 +107,15 @@ hashrefs. Returns a list of the validated positional arguments
 and a hashref of the validated named arguments or throws an
 exception on validation error.
 
-=item named_signature
+=item B<named_signature>
 
 Returns the named signature.
 
-=item positional_signature
+=item B<positional_signature>
 
 Returns the positional signature.
 
-=item positional_signature_size
+=item B<positional_signature_size>
 
 Returns the length of the positional signature.
 
