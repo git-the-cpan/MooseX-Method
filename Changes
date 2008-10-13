@@ -1,8 +1,13 @@
+0.43 2008-10-13
+    - Add a warning about this module lacking a maintainer.
+
 0.42 2008-06-27
     - Add export methods back to Named and Positional
+
 0.41 2008-05-29
     - Fix borked test coverage due to accidental include of methods, no
       real change.
+
 0.40 2008-05-29
     - Preliminary support for compiled signatures that
       will in many cases yield a *significant* performance

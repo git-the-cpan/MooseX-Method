@@ -19,7 +19,7 @@ use MooseX::Method::Exception;
 use Sub::Exporter;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.42';
+our $VERSION = '0.43';
 
 our $AUTHORITY = 'cpan:BERLE';
 
@@ -219,6 +219,12 @@ __END__
 =head1 NAME
 
 MooseX::Method - Method declaration with type checking
+
+=head1 WARNING
+
+This module is currently unmaintained. If you are interested in taking
+over this responsibility, contact me and I will ensure you have the
+neccesary permissions to do so. I will also be available for guidance.
 
 =head1 SYNOPSIS
 
