@@ -79,7 +79,7 @@ sub export {
   return $export;
 }
 
-__PACKAGE__->meta->make_immutable;
+__PACKAGE__->meta->make_immutable(inline_constructor => 0);
 
 1;
 

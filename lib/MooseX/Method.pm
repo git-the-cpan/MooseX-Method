@@ -218,13 +218,7 @@ __END__
 
 =head1 NAME
 
-MooseX::Method - Method declaration with type checking
-
-=head1 WARNING
-
-This module is currently unmaintained. If you are interested in taking
-over this responsibility, contact me and I will ensure you have the
-neccesary permissions to do so. I will also be available for guidance.
+MooseX::Method - (DEPRECATED) Method declaration with type checking
 
 =head1 SYNOPSIS
 
@@ -275,6 +269,12 @@ neccesary permissions to do so. I will also be available for guidance.
   Foo->morning; # This neither.
 
   Foo->greet; # Won't work.
+
+=head1 DEPRECATION NOTICE
+
+This module has been deprecated in favor of L<MooseX::Method::Signatures>. It
+is being maintained purely for people who need more time to change their
+implementations.  It should not be used for new code.
 
 =head1 DESCRIPTION
 

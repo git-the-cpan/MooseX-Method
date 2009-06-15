@@ -62,7 +62,7 @@ sub validate {
     $self->{named_signature}->validate (%named_args);
 }
 
-__PACKAGE__->meta->make_immutable;
+__PACKAGE__->meta->make_immutable(inline_constructor => 0);
 
 1;
 
