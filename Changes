@@ -1,3 +1,6 @@
+0.44 2009-06-30
+    - Use bare option to some attributes to quiet warnings from newer Moose
+
 0.43 2009-06-15
     - Add deprecation notice
     - Add inline_constructor => 0 to various classes that define their own

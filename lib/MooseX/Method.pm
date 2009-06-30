@@ -19,7 +19,7 @@ use MooseX::Method::Exception;
 use Sub::Exporter;
 use Sub::Name qw/subname/;
 
-our $VERSION = '0.43';
+our $VERSION = '0.44';
 
 our $AUTHORITY = 'cpan:BERLE';
 

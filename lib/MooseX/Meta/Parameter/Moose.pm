@@ -8,12 +8,12 @@ use Scalar::Util qw/blessed/;
 
 with qw/MooseX::Meta::Parameter/;
 
-has isa             => (isa => 'Str | Object');
-has does            => (isa => 'Str');
-has required        => (isa => 'Bool');
-has default         => (isa => 'Defined');
-has coerce          => (isa => 'Bool');
-has type_constraint => (isa => 'Moose::Meta::TypeConstraint');
+has isa             => (is => 'bare', isa => 'Str | Object');
+has does            => (is => 'bare', isa => 'Str');
+has required        => (is => 'bare', isa => 'Bool');
+has default         => (is => 'bare', isa => 'Defined');
+has coerce          => (is => 'bare', isa => 'Bool');
+has type_constraint => (is => 'bare', isa => 'Moose::Meta::TypeConstraint');
 
 our $VERSION = '0.01';
 
